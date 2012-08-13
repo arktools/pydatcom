@@ -16,6 +16,7 @@ class Parser(object):
     def __init__(self, **kw):
         self.debug = kw.get('debug', 0)
         self.names = { }
+        self.data = { }
         try:
             modname = os.path.split(os.path.splitext(__file__)[0])[1] + "_" + self.__class__.__name__
         except:
@@ -34,7 +35,7 @@ class Parser(object):
     def run(self):
         while 1:
             try:
-                s = raw_input('calc > ')
+                s = raw_input('datcom > ')
             except EOFError:
                 break
             if not s: continue     
@@ -43,23 +44,25 @@ class Parser(object):
     
 class Calc(Parser):
 
-    tokens = (
-        'NAME','NUMBER',
-        'PLUS','MINUS','EXP', 'TIMES','DIVIDE','EQUALS',
-        'LPAREN','RPAREN',
-        )
+    states = (
+        ('INPUT','exclusive'),
+        ('OUTPUT','exclusive'),
+    )
+
+    reserved = {
+        'exit' : 'EXIT',
+    }
+
+    tokens = [
+        'NAME','NUMBER', 'EQUALS',
+        'DELIM','COMMA',
+        ] + reserved.values()
 
     # Tokens
-
-    t_PLUS    = r'\+'
-    t_MINUS   = r'-'
-    t_EXP     = r'\*\*'
-    t_TIMES   = r'\*'
-    t_DIVIDE  = r'/'
-    t_EQUALS  = r'='
-    t_LPAREN  = r'\('
-    t_RPAREN  = r'\)'
-    t_NAME    = r'[a-zA-Z_][a-zA-Z0-9_]*'
+    t_INPUT_EQUALS  = r'='
+    t_INPUT_DELIM = '\$'
+    t_INPUT_NAME = r'[a-zA-Z_][a-zA-Z0-9_]*'
+    t_ANY_ignore = '\t'
 
     def t_NUMBER(self, t):
         r'\d+'
@@ -71,67 +74,60 @@ class Calc(Parser):
         #print "parsed number %s" % repr(t.value)
         return t
 
-    t_ignore = " \t"
-
-    def t_newline(self, t):
+    def t_ANY_newline(self, t):
         r'\n+'
         t.lexer.lineno += t.value.count("\n")
     
-    def t_error(self, t):
+    def t_ANY_error(self, t):
         print("Illegal character '%s'" % t.value[0])
         t.lexer.skip(1)
 
+    def t_INPUT_end_INPUT(self, t):
+        r'end\ input'
+        t.lexer.begin('INITIAL')
+
+    def t_INITIAL_begin_INPUT(self, t):
+        r'input'
+        t.lexer.begin('INPUT')
+
     # Parsing rules
 
-    precedence = (
-        ('left','PLUS','MINUS'),
-        ('left','TIMES','DIVIDE'),
-        ('left', 'EXP'),
-        ('right','UMINUS'),
-        )
+    precedence = ()
 
-    def p_statement_assign(self, p):
-        'statement : NAME EQUALS expression'
-        self.names[p[1]] = p[3]
-
-    def p_statement_expr(self, p):
-        'statement : expression'
-        print(p[1])
-
-    def p_expression_binop(self, p):
+    def p_assign(self, p):
         """
-        expression : expression PLUS expression
-                  | expression MINUS expression
-                  | expression TIMES expression
-                  | expression DIVIDE expression
-                  | expression EXP expression
+        expression : NAME EQUALS NUMBER
         """
-        #print [repr(p[i]) for i in range(0,4)]
-        if p[2] == '+'  : p[0] = p[1] + p[3]
-        elif p[2] == '-': p[0] = p[1] - p[3]
-        elif p[2] == '*': p[0] = p[1] * p[3]
-        elif p[2] == '/': p[0] = p[1] / p[3]
-        elif p[2] == '**': p[0] = p[1] ** p[3]
+        p[0] = {p[1], p[3]}
 
-    def p_expression_uminus(self, p):
-        'expression : MINUS expression %prec UMINUS'
-        p[0] = -p[2]
+    def p_expression_list(self, p):
+        """
+        expressions : expression COMMA expresssions
+        """
+        p[0] = p[3]
+        for key in p[1].keys():
+            if key in p[0]:
+                raise KeyError('duplicate key %s' % key)
+            else:
+                p[0][key] = p[1][key]
 
-    def p_expression_group(self, p):
-        'expression : LPAREN expression RPAREN'
-        p[0] = p[2]
+    def p_expressions(self, p):
+        """
+        expressions : expression
+        """
+        p[0] = p[3]
 
-    def p_expression_number(self, p):
-        'expression : NUMBER'
-        p[0] = p[1]
+    def p_assignments(self, p):
+        """
+        statement : DELIM NAME expressions DELIM 
+        """
+        self.data[p[2]] = p[3]
 
-    def p_expression_name(self, p):
-        'expression : NAME'
-        try:
-            p[0] = self.names[p[1]]
-        except LookupError:
-            print("Undefined name '%s'" % p[1])
-            p[0] = 0
+    def p_exit(self, p):
+        """
+        statement : EXIT
+        """
+        raise SystemExit('exitting')
 
     def p_error(self, p):
         if p:
