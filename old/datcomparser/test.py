@@ -2,7 +2,6 @@
 from jinja2 import Environment, PackageLoader
 env = Environment(loader=PackageLoader('datcomparser', 'templates'))
 
-
 my_dict = {
   'name': 'test',
   'CL_Basic' : [4,5],

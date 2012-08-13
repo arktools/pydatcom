@@ -1,17 +1,30 @@
 #!/usr/bin/env python
 
+# -----------------------------------------------------------------------------
+# calc.py
+#
+# A simple calculator with variables.   This is from O'Reilly's
+# "Lex and Yacc", p. 63.
+#
+# Class-based example contributed to PLY by David McNab
+# -----------------------------------------------------------------------------
+
 import sys
+sys.path.insert(0,"../..")
+
+if sys.version_info[0] >= 3:
+    raw_input = input
+
 import ply.lex as lex
 import ply.yacc as yacc
 import os
 
-class Parser(object):
+class Parser:
     """
     Base class for a lexer/parser that has the rules defined as methods
     """
     tokens = ()
     precedence = ()
-
 
     def __init__(self, **kw):
         self.debug = kw.get('debug', 0)
@@ -37,7 +50,7 @@ class Parser(object):
                 s = raw_input('calc > ')
             except EOFError:
                 break
-            if not s: continue     
+            if not s: continue
             yacc.parse(s)
 
     

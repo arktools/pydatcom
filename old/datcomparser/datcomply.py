@@ -1,17 +1,30 @@
 #!/usr/bin/env python
 
+# -----------------------------------------------------------------------------
+# calc.py
+#
+# A simple calculator with variables.   This is from O'Reilly's
+# "Lex and Yacc", p. 63.
+#
+# Class-based example contributed to PLY by David McNab
+# -----------------------------------------------------------------------------
+
 import sys
+sys.path.insert(0,"../..")
+
+if sys.version_info[0] >= 3:
+    raw_input = input
+
 import ply.lex as lex
 import ply.yacc as yacc
 import os
 
-class Parser(object):
+class Parser:
     """
     Base class for a lexer/parser that has the rules defined as methods
     """
     tokens = ()
     precedence = ()
-
 
     def __init__(self, **kw):
         self.debug = kw.get('debug', 0)
@@ -37,7 +50,7 @@ class Parser(object):
                 s = raw_input('calc > ')
             except EOFError:
                 break
-            if not s: continue     
+            if not s: continue
             yacc.parse(s)
 
     
@@ -47,10 +60,19 @@ class Calc(Parser):
         'NAME','NUMBER',
         'PLUS','MINUS','EXP', 'TIMES','DIVIDE','EQUALS',
         'LPAREN','RPAREN',
+        'INPUT', 'DIM','DERIV','DAMP','PART','FLTCON','OPTIONS','SYNTHS'
         )
 
     # Tokens
 
+    t_INPUT   = r'^1.*THE FOLLOWING IS A LIST OF ALL INPUT CARDS FOR THIS CASE\..*'
+    t_DIM     = r'^ DIM'
+    t_DERIV   = r'^ DERIV'
+    t_DAMP    = r'^ DAMP'
+    t_PART    = r'^ PART'
+    t_FLTCON  = r'^  $FLTCON'
+    t_OPTIONS = r'^  $OPTIONS'
+    t_SYNTHS  = r'^  $SYNTHS'
     t_PLUS    = r'\+'
     t_MINUS   = r'-'
     t_EXP     = r'\*\*'

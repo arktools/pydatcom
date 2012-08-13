@@ -1,6 +1,22 @@
 #!/usr/bin/env python
 
+# -----------------------------------------------------------------------------
+# calc.py
+#
+# A simple calculator with variables.   This is from O'Reilly's
+# "Lex and Yacc", p. 63.
+#
+# Class-based example contributed to PLY by David McNab.
+#
+# Modified to use new-style classes.   Test case.
+# -----------------------------------------------------------------------------
+
 import sys
+sys.path.insert(0,"../..")
+
+if sys.version_info[0] >= 3:
+    raw_input = input
+
 import ply.lex as lex
 import ply.yacc as yacc
 import os
