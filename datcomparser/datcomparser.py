@@ -42,11 +42,10 @@ class Parser(object):
             yacc.parse(s)
 
     
-class Calc(Parser):
+class DatcomParser(Parser):
 
     states = (
         ('INPUT','exclusive'),
-        ('OUTPUT','exclusive'),
     )
 
     reserved = {
@@ -54,25 +53,25 @@ class Calc(Parser):
     }
 
     tokens = [
-        'NAME','NUMBER', 'EQUALS',
-        'DELIM','COMMA',
+        'NAME',
+        'NUMBER',
+        'EQUALS',
+        'DELIM', # delimeter
+        'COMMA',
+        'WS', # whitespace
         ] + reserved.values()
 
     # Tokens
+    t_ANY_COMMA = ','
+
+    t_INITIAL_ignore = ' \t'
+
     t_INPUT_EQUALS  = r'='
     t_INPUT_DELIM = '\$'
-    t_INPUT_NAME = r'[a-zA-Z_][a-zA-Z0-9_]*'
-    t_ANY_ignore = '\t'
+    t_INPUT_WS = '[ \t\r\n]+'
 
-    def t_NUMBER(self, t):
-        r'\d+'
-        try:
-            t.value = int(t.value)
-        except ValueError:
-            print("Integer value too large %s" % t.value)
-            t.value = 0
-        #print "parsed number %s" % repr(t.value)
-        return t
+    t_INPUT_ignore = ''
+
 
     def t_ANY_newline(self, t):
         r'\n+'
@@ -84,50 +83,62 @@ class Calc(Parser):
 
     def t_INPUT_end_INPUT(self, t):
         r'end\ input'
+        print 'ending input'
         t.lexer.begin('INITIAL')
 
     def t_INITIAL_begin_INPUT(self, t):
         r'input'
+        print 'begin input'
         t.lexer.begin('INPUT')
+
+    def t_ANY_NAME(self, t):
+        r'[a-zA-Z_][a-zA-Z0-9_]*'
+        t.type = self.reserved.get(t.value,'NAME')
+        return t
+
+    def t_ANY_NUMBER(self, t):
+        r'\d+'
+        try:
+            t.value = float(t.value)
+        except ValueError:
+            print("Could not create float from %s" % t.value)
+            t.value = 0
+        return t
 
     # Parsing rules
 
-    precedence = ()
+    #precedence = ()
 
     def p_assign(self, p):
         """
-        expression : NAME EQUALS NUMBER
+        expression : NAME WS EQUALS WS NUMBER
         """
-        p[0] = {p[1], p[3]}
+        p[0] = {p[1], p[5]}
+        print p[0]
 
     def p_expression_list(self, p):
         """
-        expressions : expression COMMA expresssions
+        expression : expression WS COMMA WS expression
         """
-        p[0] = p[3]
+        p[0] = p[5]
         for key in p[1].keys():
             if key in p[0]:
                 raise KeyError('duplicate key %s' % key)
             else:
                 p[0][key] = p[1][key]
+        print p
 
-    def p_expressions(self, p):
+    def p_statement_assignments(self, p):
         """
-        expressions : expression
+        statement : DELIM NAME WS expression WS DELIM 
         """
-        p[0] = p[3]
+        self.data[p[2]] = p[4]
 
-    def p_assignments(self, p):
-        """
-        statement : DELIM NAME expressions DELIM 
-        """
-        self.data[p[2]] = p[3]
-
-    def p_exit(self, p):
+    def p_statement_exit(self, p):
         """
         statement : EXIT
         """
-        raise SystemExit('exitting')
+        raise SystemExit('good bye')
 
     def p_error(self, p):
         if p:
@@ -136,5 +147,5 @@ class Calc(Parser):
             print("Syntax error at EOF")
 
 if __name__ == '__main__':
-    calc = Calc()
-    calc.run()
+    parser = DatcomParser()
+    parser.run()
