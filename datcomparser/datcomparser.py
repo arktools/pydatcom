@@ -27,8 +27,8 @@ class Parser(object):
         #print self.debugfile, self.tabmodule
 
         # Build the lexer and parser
-        lex.lex(module=self, debug=self.debug)
-        yacc.yacc(module=self,
+        self.lex = lex.lex(module=self, debug=self.debug)
+        self.yacc = yacc.yacc(module=self,
                   debug=self.debug,
                   debugfile=self.debugfile,
                   tabmodule=self.tabmodule)
@@ -37,7 +37,8 @@ class Parser(object):
         if len(sys.argv) == 2:
             file_name = sys.argv[1]
             with open(file_name) as f:
-                yacc.parse(f.read())
+                file_data = f.read();
+            yacc.parse(file_data)
         else:
             while 1:
                 try:
@@ -55,6 +56,7 @@ class DatcomParser(Parser):
 
     states = (
         ('INPUT','exclusive'),
+        ('NAMELIST','exclusive'),
     )
 
     reserved_ANY = {
@@ -69,6 +71,24 @@ class DatcomParser(Parser):
         'DERIV' : 'DERIV',
     }
 
+    reserved_NAMELISTS = [
+        'FLTCON',
+        'SYNTHS',
+        'BODY',
+        'WGPLNF',
+        'SYMFLP',
+        'ASYFLP',
+        'OPTINS',
+        'HTPLNF',
+        'VTPLNF',
+        'VFPLNF',
+        'WGSCHR',
+        'HTSCHR',
+        'VTSCHR',
+        'VFSCHR',
+        'PROPWR',
+        'JETPWR']
+
     tokens = [
         'NAME',
         'LPAREN',
@@ -76,56 +96,86 @@ class DatcomParser(Parser):
         'FLOATVECTOR',
         'INTEGER',
         'EQUALS',
-        'DELIM', # delimeter
+        'ENDNAMELIST', # delimeter
         'COMMA',
+        'BOOL',
         'CASEID',
         'NEXTCASE',
-        ] \
+        'NAMELIST'] \
         + reserved_ANY.values() \
         + reserved_INPUT.values()
 
     # Tokens
 
-    t_ANY_COMMA = ','
     t_ANY_LPAREN = '\('
     t_ANY_RPAREN = '\)'
+
+    t_INITIAL_ignore = ' \t' 
 
     t_ANY_ignore = ' \t'
 
     t_INPUT_EQUALS  = r'='
-    t_INPUT_DELIM = '\$'
 
     t_INPUT_ignore = ''
 
-
-    def t_ANY_newline(self, t):
-        r'\n+'
-        t.lexer.lineno += t.value.count("\n")
-    def t_ANY_error(self, t):
-        #print("Illegal character '%s'" % t.value[0])
-        t.lexer.skip(1)
-
-    def t_INPUT_end_INPUT(self, t):
-        r'^1.*AUTOMATED\ STABILITY\ AND\ CONTROL\ METHODS.*'
-        print 'ending input'
-        t.lexer.begin('INITIAL')
+    def t_INPUT_BOOL(self, t):
+        r'(\.TRUE\.|\.FALSE\.)'
+        return t
 
     def t_INITIAL_begin_INPUT(self, t):
-        r'.*THE\ FOLLOWING\ IS'
-        print 'begin input'
+        r'.*THE\ FOLLOWING\ IS.*'
+        #print 'begin input'
         t.lexer.begin('INPUT')
+
+    def t_INITIAL_LINE(self, t):
+        r'.+'
+
+    def t_INPUT_COMMA(self, t):
+        r','
+        #print t
+        return t
+
+    def t_INPUT_NAMELIST(self, t):
+        '\$(?P<name>[A-Z]+)'
+        t.value = t.lexer.lexmatch.group('name')
+        if t.value in self.reserved_NAMELISTS:
+            return t
+        else:
+            self.t_ANY_error(t)
+
+    def t_INPUT_ENDNAMELIST(self, t):
+        '\$'
+        #print 'delim'
+        return t
+
+    def t_ANY_newline(self, t):
+        r'\n'
+        t.lexer.lineno += t.value.count("\n")
+        #print 'newline'
+
+    def t_ANY_error(self, t):
+        print("Illegal character '%s' at line" % t.value[0], t.lexer.lineno)
+        t.lexer.skip(1)
+        sys.exit(1)
+
+    def t_INPUT_end_INPUT(self, t):
+        r'1.*AUTOMATED\ STABILITY\ AND\ CONTROL\ METHODS.*'
+        #print 'ending input'
+        t.lexer.begin('INITIAL')
 
     def t_INPUT_NEXTCASE(self, t):
         r'.*NEXT\ CASE.*'
+        #print 'next case'
 
     def t_INPUT_CASEID(self, t):
         r'.*CASEID (.*)'
-        print 'case: ', t.value
+        #print 'case: ', t.value
 
     def t_INPUT_NAME(self, t):
         r'[a-zA-Z_][a-zA-Z0-9_]*'
         t.type = self.reserved_ANY.get(t.value,'NAME')
         t.type = self.reserved_INPUT.get(t.value,'NAME')
+        #print t
         return t
 
     @TOKEN(re_float_vector)
@@ -138,7 +188,12 @@ class DatcomParser(Parser):
         except ValueError:
             print("Could not create float from %s" % t.value)
             t.value = 0
+        #print t
         return t
+
+    def t_INPUT_ZEROLINE(self, t):
+        r'0\s.*'
+        #print 'zeroline'
 
     def t_ANY_INTEGER(self, t):
         r'\d+'
@@ -147,11 +202,28 @@ class DatcomParser(Parser):
         except ValueError:
             print("Could not create int from %s" % t.value)
             t.value = 0
+        #print t
         return t
 
     # Parsing rules
 
     precedence = ()
+
+    # first rule is top-level rule
+    def p_file_statement_append(self, p):
+        """
+        file : statement file
+        """
+        if p[2] == None:
+            p[2] = [ p[1] ]
+        else:
+            p[0] = p[2].append(p[1])
+
+    def p_file_from_statement(self, p):
+        """
+        file : statement
+        """
+        p[0] = [ p[1] ]
 
     def p_exit(self, p):
         'statement : EXIT'
@@ -159,16 +231,36 @@ class DatcomParser(Parser):
 
     def p_error(self, p):
         if p:
-            print("Syntax error at '%s'" % p.value)
+            print("Syntax error '%s' at line: %d" % 
+                  (p.value, self.lex.lineno))
         else:
             print("Syntax error at EOF")
+        sys.exit(1)
 
-    def p_expression_assign(self, p):
+    def p_namelist(self, p):
         """
-        expression : NAME EQUALS FLOATVECTOR
+        statement : NAMELIST terms ENDNAMELIST
+        """
+        self.data[p[1]] = p[2]
+        return p
+
+    def p_float_term(self, p):
+        """
+        term : NAME EQUALS FLOATVECTOR
         """
         p[0] = {p[1] : p[3]}
-        print p[0]
+        #print 'term'
+
+    def p_bool_term(self, p):
+        """
+        term : NAME EQUALS BOOL
+        """
+        if p[3] == ".TRUE.":
+            p[0] = { p[1] : True }
+        elif p[3] == ".FALSE.":
+            p[0] = { p[1] : False }
+        else:
+            self.p_error(p[3])
 
     def p_airfoil(self, p):
         """
@@ -205,31 +297,29 @@ class DatcomParser(Parser):
         statement : CASEID
         """
         self.data[p[1]] = p[1]
-        print p[1]
 
-    def p_expression_list(self, p):
+    def p_term_terms(self, p):
         """
-        expression : expression COMMA expression
+        terms : term
         """
-        p[0] = p[3]
-        for key in p[1].keys():
+        p[0] = p[1]
+
+    def p_terms(self, p):
+        """
+        terms : terms COMMA term
+        """
+        p[0] = p[1]
+        for key in p[3].keys():
             if key in p[0]:
                 raise KeyError('duplicate key %s' % key)
             else:
-                p[0][key] = p[1][key]
+                p[0][key] = p[3][key]
 
-    def p_statement_assignments(self, p):
+    def p_array_term(self, p):
         """
-        statement : DELIM NAME expression DELIM
-        """
-        self.data[p[2]] = p[3]
-
-    def p_array_assign(self, p):
-        """
-        expression : NAME LPAREN INTEGER RPAREN EQUALS FLOATVECTOR 
+        term : NAME LPAREN INTEGER RPAREN EQUALS FLOATVECTOR 
         """
         p[0] = {p[1] : p[6]}
-        print p[0]
 
 if __name__ == '__main__':
     parser = DatcomParser()
