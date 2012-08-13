@@ -58,17 +58,16 @@ class DatcomParser(Parser):
         'EQUALS',
         'DELIM', # delimeter
         'COMMA',
-        'WS', # whitespace
         ] + reserved.values()
 
     # Tokens
+
     t_ANY_COMMA = ','
 
-    t_INITIAL_ignore = ' \t'
+    t_ANY_ignore = ' \t'
 
     t_INPUT_EQUALS  = r'='
     t_INPUT_DELIM = '\$'
-    t_INPUT_WS = '[ \t\r\n]+'
 
     t_INPUT_ignore = ''
 
@@ -97,7 +96,7 @@ class DatcomParser(Parser):
         return t
 
     def t_ANY_NUMBER(self, t):
-        r'\d+'
+        r'\d+\.?\d*(E(\+|-)?\d+\.\d+)?'
         try:
             t.value = float(t.value)
         except ValueError:
@@ -107,37 +106,10 @@ class DatcomParser(Parser):
 
     # Parsing rules
 
-    #precedence = ()
+    precedence = ()
 
-    def p_assign(self, p):
-        """
-        expression : NAME WS EQUALS WS NUMBER
-        """
-        p[0] = {p[1], p[5]}
-        print p[0]
-
-    def p_expression_list(self, p):
-        """
-        expression : expression WS COMMA WS expression
-        """
-        p[0] = p[5]
-        for key in p[1].keys():
-            if key in p[0]:
-                raise KeyError('duplicate key %s' % key)
-            else:
-                p[0][key] = p[1][key]
-        print p
-
-    def p_statement_assignments(self, p):
-        """
-        statement : DELIM NAME WS expression WS DELIM 
-        """
-        self.data[p[2]] = p[4]
-
-    def p_statement_exit(self, p):
-        """
-        statement : EXIT
-        """
+    def p_exit(self, p):
+        'statement : EXIT'
         raise SystemExit('good bye')
 
     def p_error(self, p):
@@ -145,6 +117,31 @@ class DatcomParser(Parser):
             print("Syntax error at '%s'" % p.value)
         else:
             print("Syntax error at EOF")
+
+    def p_expression_assign(self, p):
+        """
+        expression : NAME EQUALS NUMBER
+        """
+        p[0] = {p[1] : p[3]}
+        print p[0]
+
+    def p_expression_list(self, p):
+        """
+        expression : expression COMMA expression
+        """
+        p[0] = p[3]
+        for key in p[1].keys():
+            if key in p[0]:
+                raise KeyError('duplicate key %s' % key)
+            else:
+                p[0][key] = p[1][key]
+
+    def p_statement_assignments(self, p):
+        """
+        statement : DELIM NAME expression DELIM 
+        """
+        self.data[p[2]] = p[3]
+        print self.data
 
 if __name__ == '__main__':
     parser = DatcomParser()
