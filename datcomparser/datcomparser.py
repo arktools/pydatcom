@@ -54,7 +54,11 @@ class DatcomParser(Parser):
 
     states = (
         ('INPUT','exclusive'),
-        ('NAMELIST','exclusive'),
+        ('STATIC','exclusive'),
+        ('DYNAMIC','exclusive'),
+        ('AILERON','exclusive'),
+        ('ELEVATOR','exclusive'),
+        ('FLAP','exclusive'),
     )
 
     reserved_INPUT = {
@@ -120,7 +124,33 @@ class DatcomParser(Parser):
         #print 'begin input'
         t.lexer.begin('INPUT')
 
-    def t_INITIAL_JUNK(self, t):
+    def t_INITIAL_begin_STATIC(self, t):
+        r'CHARACTERISTICS\ AT\ ANGLE\ OF\ ATTACK.*[\r\n]+.*WING-BODY.*TAIL'
+        print 'begin static output'
+        t.lexer.begin('STATIC')
+
+    def t_STATIC_end_STATIC(self, t):
+        r'0'
+        print 'end static output'
+        t.lexer.begin('INITIAL')
+
+    def t_STATIC_JUNKALL(self, t):
+        r'.+'
+
+    def t_INITIAL_begin_DYNAMIC(self, t):
+        r'DYNAMIC\ DERIVATIVES.*[\r\n]+.*WING-BODY.*TAIL'
+        print 'begin dynamic output'
+        t.lexer.begin('DYNAMIC')
+
+    def t_DYNAMIC_end_DYNAMIC(self, t):
+        r'0'
+        print 'end dynamic output'
+        t.lexer.begin('INITIAL')
+
+    def t_DYNAMIC_JUNKALL(self, t):
+        r'.+'
+
+    def t_INITIAL_JUNKALL(self, t):
         r'.+'
 
     def t_INPUT_COMMA(self, t):
@@ -162,7 +192,7 @@ class DatcomParser(Parser):
 
     def t_INPUT_CASEID(self, t):
         r'.*CASEID (.*)'
-        #print 'case: ', t.value
+        print 'case: ', t.value
 
     def t_INPUT_NAME(self, t):
         r'[a-zA-Z_][a-zA-Z0-9_]*'
@@ -316,4 +346,4 @@ if __name__ == '__main__':
         parser = DatcomParser({
             'file_name':sys.argv[1]
             })
-    print parser.data
+    #print parser.data
