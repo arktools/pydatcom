@@ -14,8 +14,9 @@ class Parser(object):
     tokens = ()
     precedence = ()
 
-    def __init__(self, **kw):
+    def __init__(self,kw={}):
         self.debug = kw.get('debug', 0)
+        self.file_name = kw.get('file_name', None)
         self.names = { }
         self.data = { }
         try:
@@ -33,22 +34,19 @@ class Parser(object):
                   debugfile=self.debugfile,
                   tabmodule=self.tabmodule)
 
-    def run(self):
-        if len(sys.argv) == 2:
-            file_name = sys.argv[1]
-            with open(file_name) as f:
-                file_data = f.read();
-            yacc.parse(file_data)
-        else:
-            while 1:
+        if self.file_name==None:
+           while 1:
                 try:
                     s = raw_input('datcom > ')
                 except EOFError:
                     break
                 if not s: continue     
                 yacc.parse(s)
-
-    
+        else:
+            with open(self.file_name) as f:
+                file_data = f.read();
+            yacc.parse(file_data)
+     
 class DatcomParser(Parser):
 
     re_float = r'(\+|-)?\d+\.\d+(E(\+|-)?\d+)?'
@@ -58,10 +56,6 @@ class DatcomParser(Parser):
         ('INPUT','exclusive'),
         ('NAMELIST','exclusive'),
     )
-
-    reserved_ANY = {
-        'exit' : 'EXIT',
-    }
 
     reserved_INPUT = {
         'NACA' : 'NACA',
@@ -102,7 +96,6 @@ class DatcomParser(Parser):
         'CASEID',
         'NEXTCASE',
         'NAMELIST'] \
-        + reserved_ANY.values() \
         + reserved_INPUT.values()
 
     # Tokens
@@ -127,7 +120,7 @@ class DatcomParser(Parser):
         #print 'begin input'
         t.lexer.begin('INPUT')
 
-    def t_INITIAL_LINE(self, t):
+    def t_INITIAL_JUNK(self, t):
         r'.+'
 
     def t_INPUT_COMMA(self, t):
@@ -173,7 +166,6 @@ class DatcomParser(Parser):
 
     def t_INPUT_NAME(self, t):
         r'[a-zA-Z_][a-zA-Z0-9_]*'
-        t.type = self.reserved_ANY.get(t.value,'NAME')
         t.type = self.reserved_INPUT.get(t.value,'NAME')
         #print t
         return t
@@ -224,10 +216,6 @@ class DatcomParser(Parser):
         file : statement
         """
         p[0] = [ p[1] ]
-
-    def p_exit(self, p):
-        'statement : EXIT'
-        raise SystemExit('good bye')
 
     def p_error(self, p):
         if p:
@@ -322,6 +310,10 @@ class DatcomParser(Parser):
         p[0] = {p[1] : p[6]}
 
 if __name__ == '__main__':
-    parser = DatcomParser()
-    parser.run()
+    if len(sys.argv) == 1:
+        parser = DatcomParser()
+    else:
+        parser = DatcomParser({
+            'file_name':sys.argv[1]
+            })
     print parser.data
