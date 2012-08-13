@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 import sys
-import ply.lex as lex
 import ply.yacc as yacc
+import ply.lex as lex
+from ply.lex import TOKEN
 import os
+import string
 
 class Parser(object):
     """
@@ -11,7 +13,6 @@ class Parser(object):
     """
     tokens = ()
     precedence = ()
-
 
     def __init__(self, **kw):
         self.debug = kw.get('debug', 0)
@@ -33,36 +34,61 @@ class Parser(object):
                   tabmodule=self.tabmodule)
 
     def run(self):
-        while 1:
-            try:
-                s = raw_input('datcom > ')
-            except EOFError:
-                break
-            if not s: continue     
-            yacc.parse(s)
+        if len(sys.argv) == 2:
+            file_name = sys.argv[1]
+            with open(file_name) as f:
+                yacc.parse(f.read())
+        else:
+            while 1:
+                try:
+                    s = raw_input('datcom > ')
+                except EOFError:
+                    break
+                if not s: continue     
+                yacc.parse(s)
 
     
 class DatcomParser(Parser):
+
+    re_float = r'(\+|-)?\d+\.\d+(E(\+|-)?\d+)?'
+    re_float_vector = r'({f})(\s*,\s*{f})*'.format(f=re_float)
 
     states = (
         ('INPUT','exclusive'),
     )
 
-    reserved = {
+    reserved_ANY = {
         'exit' : 'EXIT',
+    }
+
+    reserved_INPUT = {
+        'NACA' : 'NACA',
+        'DIM'  : 'DIM',
+        'DAMP'  : 'DAMP',
+        'PART'  : 'PART',
+        'DERIV' : 'DERIV',
     }
 
     tokens = [
         'NAME',
-        'NUMBER',
+        'LPAREN',
+        'RPAREN',
+        'FLOATVECTOR',
+        'INTEGER',
         'EQUALS',
         'DELIM', # delimeter
         'COMMA',
-        ] + reserved.values()
+        'CASEID',
+        'NEXTCASE',
+        ] \
+        + reserved_ANY.values() \
+        + reserved_INPUT.values()
 
     # Tokens
 
     t_ANY_COMMA = ','
+    t_ANY_LPAREN = '\('
+    t_ANY_RPAREN = '\)'
 
     t_ANY_ignore = ' \t'
 
@@ -75,32 +101,51 @@ class DatcomParser(Parser):
     def t_ANY_newline(self, t):
         r'\n+'
         t.lexer.lineno += t.value.count("\n")
-    
     def t_ANY_error(self, t):
-        print("Illegal character '%s'" % t.value[0])
+        #print("Illegal character '%s'" % t.value[0])
         t.lexer.skip(1)
 
     def t_INPUT_end_INPUT(self, t):
-        r'end\ input'
+        r'^1.*AUTOMATED\ STABILITY\ AND\ CONTROL\ METHODS.*'
         print 'ending input'
         t.lexer.begin('INITIAL')
 
     def t_INITIAL_begin_INPUT(self, t):
-        r'input'
+        r'.*THE\ FOLLOWING\ IS'
         print 'begin input'
         t.lexer.begin('INPUT')
 
-    def t_ANY_NAME(self, t):
+    def t_INPUT_NEXTCASE(self, t):
+        r'.*NEXT\ CASE.*'
+
+    def t_INPUT_CASEID(self, t):
+        r'.*CASEID (.*)'
+        print 'case: ', t.value
+
+    def t_INPUT_NAME(self, t):
         r'[a-zA-Z_][a-zA-Z0-9_]*'
-        t.type = self.reserved.get(t.value,'NAME')
+        t.type = self.reserved_ANY.get(t.value,'NAME')
+        t.type = self.reserved_INPUT.get(t.value,'NAME')
         return t
 
-    def t_ANY_NUMBER(self, t):
-        r'\d+\.?\d*(E(\+|-)?\d+\.\d+)?'
+    @TOKEN(re_float_vector)
+    def t_INPUT_FLOATVECTOR(self, t):
         try:
-            t.value = float(t.value)
+            vector = []
+            for num in string.split(t.value,','):
+                vector.append(float(num)) 
+            t.value = vector
         except ValueError:
             print("Could not create float from %s" % t.value)
+            t.value = 0
+        return t
+
+    def t_ANY_INTEGER(self, t):
+        r'\d+'
+        try:
+            t.value = int(t.value)
+        except ValueError:
+            print("Could not create int from %s" % t.value)
             t.value = 0
         return t
 
@@ -120,10 +165,47 @@ class DatcomParser(Parser):
 
     def p_expression_assign(self, p):
         """
-        expression : NAME EQUALS NUMBER
+        expression : NAME EQUALS FLOATVECTOR
         """
         p[0] = {p[1] : p[3]}
         print p[0]
+
+    def p_airfoil(self, p):
+        """
+        statement : NACA NAME INTEGER INTEGER
+        """
+        self.data[p[2]] = p[4]
+
+    def p_dim(self, p):
+        """
+        statement : DIM NAME
+        """
+        self.data[p[1]] = p[2]
+
+    def p_damp(self, p):
+        """
+        statement : DAMP
+        """
+        self.data[p[1]] = True
+
+    def p_part(self, p):
+        """
+        statement : PART
+        """
+        self.data[p[1]] = True
+
+    def p_deriv(self, p):
+        """
+        statement : DERIV NAME
+        """
+        self.data[p[1]] = p[2]
+
+    def p_caseid(self, p):
+        """
+        statement : CASEID
+        """
+        self.data[p[1]] = p[1]
+        print p[1]
 
     def p_expression_list(self, p):
         """
@@ -138,11 +220,18 @@ class DatcomParser(Parser):
 
     def p_statement_assignments(self, p):
         """
-        statement : DELIM NAME expression DELIM 
+        statement : DELIM NAME expression DELIM
         """
         self.data[p[2]] = p[3]
-        print self.data
+
+    def p_array_assign(self, p):
+        """
+        expression : NAME LPAREN INTEGER RPAREN EQUALS FLOATVECTOR 
+        """
+        p[0] = {p[1] : p[6]}
+        print p[0]
 
 if __name__ == '__main__':
     parser = DatcomParser()
     parser.run()
+    print parser.data
