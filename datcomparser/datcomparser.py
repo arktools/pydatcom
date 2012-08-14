@@ -56,9 +56,8 @@ class DatcomParser(Parser):
         ('INPUT','exclusive'),
         ('STATIC','exclusive'),
         ('DYNAMIC','exclusive'),
-        ('AILERON','exclusive'),
-        ('ELEVATOR','exclusive'),
-        ('FLAP','exclusive'),
+        ('SYMFLAP','exclusive'),
+        ('ASYFLAP','exclusive'),
     )
 
     reserved_INPUT = {
@@ -92,6 +91,8 @@ class DatcomParser(Parser):
         'LPAREN',
         'RPAREN',
         'NEWCASE',
+        'DYNAMICTABLE',
+        'STATICTABLE',
         'FLOATVECTOR',
         'INTEGER',
         'EQUALS',
@@ -127,45 +128,54 @@ class DatcomParser(Parser):
         # pop old case
         # starts within input first
         t.lexer.push_state('INPUT')
+        #print 'new case'
         return t
 
     def t_INITIAL_NEWCASE(self, t):
         r'.*THE\ FOLLOWING\ IS\ A\ LIST\ OF\ ALL.*'
         t.lexer.push_state('CASE')
         t.lexer.push_state('INPUT')
+        #print 'new case'
         return t
 
     def t_CASE_end_CASE(self, t):
         r'1\ END\ OF\ JOB\.'
         t.lexer.pop_state()
 
-    def t_CASE_begin_STATIC(self, t):
-        r'CHARACTERISTICS\ AT\ ANGLE\ OF\ ATTACK.*'
-        t.lexer.push_state('STATIC')
-
-    def t_STATIC_end_STATIC(self, t):
-        r'0'
-        t.lexer.pop_state()
-
-    def t_STATIC_JUNKALL(self, t):
-        r'.+'
+    def t_STATIC_STATICTABLE(self, t):
+        r'([^0].+\n?)+'
+        #print 'static table'
+        return t
 
     def t_CASE_begin_DYNAMIC(self, t):
-        r'DYNAMIC\ DERIVATIVES'
+        r'DYNAMIC\ DERIVATIVES\ \(PER.*\n(0.*\n){3}'
+        #print 'begin dynamic'
         t.lexer.push_state('DYNAMIC')
 
-    def t_DYNAMIC_end_DYNAMIC(self, t):
+    def t_CASE_begin_STATIC(self, t):
+        r'.*DERIVATIVE\ \(PER.*\n(0.*\n){2}'
+        #print 'begin static'
+        t.lexer.push_state('STATIC')
+
+    #def t_CASE_begin_SYMFLAP(self, t):
+        #r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL.*(.*\n){8}.*INCREMENTS\ DUE\ TO\ DEFLECTION.*'
+        #print 'begin symflap'
+        #t.lexer.push_state('SYMFLAP')
+
+    #def t_CASE_begin_ASYFLAP(self, t):
+        #r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL.*(.*\n){8}.*YAWING\ MOMNET\ COEFFICIENT.*'
+        #print 'begin aymflap'
+        #t.lexer.push_state('ASYFLAP')
+
+    def t_ASYFLAP_SYMFLAP_STATIC_DYNAMIC_end(self, t):
         r'0'
+        #print 'end'
         t.lexer.pop_state()
 
-    def t_DYNAMIC_JUNKALL(self, t):
-        r'.+'
-
-    def t_INITIAL_JUNKALL(self, t):
-        r'.+'
-
-    def t_CASE_JUNKALL(self, t):
-        r'.+'
+    def t_DYNAMIC_DYNAMICTABLE(self, t):
+        r'([^0].+\n?)+'
+        #print 'dynamic table'
+        return t
 
     def t_INPUT_COMMA(self, t):
         r','
@@ -196,12 +206,14 @@ class DatcomParser(Parser):
 
     def t_INPUT_end_INPUT(self, t):
         r'1.*AUTOMATED\ STABILITY\ AND\ CONTROL\ METHODS.*'
+        #print 'end input'
         t.lexer.pop_state()
 
     def t_INPUT_CASEID(self, t):
         r'.*CASEID (?P<name>.*)'
-        t.value = t.lexer.lexmatch.group('name')
+        t.value = t.lexer.lexmatch.group('name').strip()
         t.num = len(self.cases)
+        #print t.value
         return t
 
     def t_INPUT_NAME(self, t):
@@ -209,6 +221,9 @@ class DatcomParser(Parser):
         t.type = self.reserved_INPUT.get(t.value,'NAME')
         #print t
         return t
+
+    def t_CASE_INITIAL_JUNKALL(self, t):
+        r'.+'
 
     @TOKEN(re_float_vector)
     def t_INPUT_FLOATVECTOR(self, t):
@@ -262,12 +277,58 @@ class DatcomParser(Parser):
         statement : NEWCASE
         """
         self.cases.append({})
+        #print '\n'
 
     def p_caseid(self, p):
         """
         statement : CASEID
         """
         self.cases[-1]['ID'] = p[1]
+
+    def parse_table(self,cols,data):
+        table = {}
+        colLastOld = -1
+        for i in xrange(len(cols)):
+            colLast = colLastOld+cols[i][1]
+            lines = data.split('\n')
+            valList = []
+            for j in xrange(len(lines)-1): # TODO why -1
+                line = lines[j]
+                col = line[colLastOld+1:colLast].strip()
+                if col == '':
+                    val = 0
+                elif col == 'NDM':
+                    val = 'NDM'                    
+                elif col == 'NA':
+                    val = 'NA'
+                else:
+                    #print 'raw: %11s' % col
+                    val = float(col)
+                    #print 'float: %11f\n' % val
+                valList.append(val)
+            table[cols[i][0]] = valList
+            colLastOld = colLast
+        return  table
+
+    def p_dynamictable(self, p):
+        """
+        statement : DYNAMICTABLE
+        """
+        self.cases[-1]['DYNAMIC'] = self.parse_table(
+            [['ALPHA', 10], ['CLQ', 13], ['CMQ', 13],
+            ['CLAD', 13], ['CMAD', 13], ['CLP', 14],
+            ['CYP', 13], ['CNP', 13], ['CNR', 13],
+            ['CLR', 14]], p[1])
+
+    def p_statictable(self, p):
+        """
+        statement : STATICTABLE
+        """
+        self.cases[-1]['STATIC'] = self.parse_table(
+            [['ALPHA', 8], ['CD', 9], ['CL', 9],
+            ['CM', 10], ['CN', 8], ['CA', 9],
+            ['XCP', 9], ['CLA', 13], ['CMA', 13],
+            ['CYB', 13], ['CNB', 14], ['CLB', 13]], p[1])
 
     def p_error(self, p):
         if p:
@@ -363,4 +424,6 @@ if __name__ == '__main__':
             })
     print 'cases:'
     for case in parser.cases:
-        print '\n', case.get('ID','UNKNOWN').strip(), '\n', case.keys()
+        print '\n', case.get('ID','UNKNOWN'), '\n', case.keys()
+        if 'STATIC' in case.keys():
+            print 'CL:', case['STATIC']['CL']
