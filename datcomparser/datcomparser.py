@@ -147,14 +147,16 @@ class DatcomParser(Parser):
         t.value = {
             'deriv_table' : match.group('deriv_table'),
         }
-        #return t
+        print 'dynamic table'
+        return t
 
     def t_CASE_STATICTABLE(self, t):
-        r'CHARACTERISTICS\ AT\ ANGLE\ OF\ ATTACK.*\n(?P<config>.*)\n(?P<case>.*)\n(.*\n){2}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){1}0(?P<deriv_headers>.*)\n0.*\n(?P<deriv_table>([^0].*\n)+)'
+        r'CHARACTERISTICS\ AT\ ANGLE\ OF\ ATTACK.*\n(?P<config>.*(\n.*POWER.*)?)\n(?P<case>.*)\n(.*\n){2}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){1}0(?P<deriv_headers>.*)\n0.*\n(?P<deriv_table>([^0].*\n)+)'
         match = t.lexer.lexmatch
         t.value = {
             'deriv_table' : match.group('deriv_table'),
         }
+        print 'static table'
         return t
 
     def t_CASE_SYMFLPTABLE(self, t):
@@ -165,6 +167,7 @@ class DatcomParser(Parser):
             'deflection' : match.group('deflection'),
             'drag_table' : match.group('drag_table'),
         }
+        print 'symflp table'
         return t
 
     def t_CASE_ASYFLPTABLE(self, t):
@@ -175,6 +178,7 @@ class DatcomParser(Parser):
             'yaw_table' : match.group('yaw_table'),
             'roll_table' : match.group('roll_table'),
         }
+        print 'asyflp table'
         return t
 
     def t_INPUT_COMMA(self, t):
@@ -213,7 +217,7 @@ class DatcomParser(Parser):
         r'.*CASEID (?P<name>.*)'
         t.value = t.lexer.lexmatch.group('name').strip()
         t.num = len(self.cases)
-        #print t.value
+        print '\ncase:', t.value
         return t
 
     def t_INPUT_NAME(self, t):
@@ -471,7 +475,7 @@ if __name__ == '__main__':
         parser = DatcomParser({
             'file_name':sys.argv[1]
             })
-    print 'cases:'
+    print '\ncases:'
     for case in parser.cases:
         print '\n', case.get('ID','UNKNOWN'), '\n', case.keys()
         if 'STATIC' in case.keys():
