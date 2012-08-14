@@ -17,8 +17,7 @@ class Parser(object):
     def __init__(self,kw={}):
         self.debug = kw.get('debug', 0)
         self.file_name = kw.get('file_name', None)
-        self.names = { }
-        self.data = { }
+        self.cases = []
         try:
             modname = os.path.split(os.path.splitext(__file__)[0])[1] + "_" + self.__class__.__name__
         except:
@@ -53,6 +52,7 @@ class DatcomParser(Parser):
     re_float_vector = r'({f})(\s*,\s*{f})*'.format(f=re_float)
 
     states = (
+        ('CASE','exclusive'),
         ('INPUT','exclusive'),
         ('STATIC','exclusive'),
         ('DYNAMIC','exclusive'),
@@ -91,6 +91,7 @@ class DatcomParser(Parser):
         'NAME',
         'LPAREN',
         'RPAREN',
+        'NEWCASE',
         'FLOATVECTOR',
         'INTEGER',
         'EQUALS',
@@ -98,7 +99,6 @@ class DatcomParser(Parser):
         'COMMA',
         'BOOL',
         'CASEID',
-        'NEXTCASE',
         'NAMELIST'] \
         + reserved_INPUT.values()
 
@@ -119,33 +119,44 @@ class DatcomParser(Parser):
         r'(\.TRUE\.|\.FALSE\.)'
         return t
 
-    def t_INITIAL_begin_INPUT(self, t):
-        r'.*THE\ FOLLOWING\ IS.*'
-        #print 'begin input'
-        t.lexer.begin('INPUT')
+    def t_INPUT_NEXTCASE(self, t):
+        r'NEXT\ CASE'
 
-    def t_INITIAL_begin_STATIC(self, t):
-        r'CHARACTERISTICS\ AT\ ANGLE\ OF\ ATTACK.*[\r\n]+.*WING-BODY.*TAIL'
-        print 'begin static output'
-        t.lexer.begin('STATIC')
+    def t_CASE_NEWCASE(self, t):
+        r'.*THE\ FOLLOWING\ IS\ A\ LIST\ OF\ ALL.*'
+        # pop old case
+        # starts within input first
+        t.lexer.push_state('INPUT')
+        return t
+
+    def t_INITIAL_NEWCASE(self, t):
+        r'.*THE\ FOLLOWING\ IS\ A\ LIST\ OF\ ALL.*'
+        t.lexer.push_state('CASE')
+        t.lexer.push_state('INPUT')
+        return t
+
+    def t_CASE_end_CASE(self, t):
+        r'1\ END\ OF\ JOB\.'
+        t.lexer.pop_state()
+
+    def t_CASE_begin_STATIC(self, t):
+        r'CHARACTERISTICS\ AT\ ANGLE\ OF\ ATTACK.*'
+        t.lexer.push_state('STATIC')
 
     def t_STATIC_end_STATIC(self, t):
         r'0'
-        print 'end static output'
-        t.lexer.begin('INITIAL')
+        t.lexer.pop_state()
 
     def t_STATIC_JUNKALL(self, t):
         r'.+'
 
-    def t_INITIAL_begin_DYNAMIC(self, t):
-        r'DYNAMIC\ DERIVATIVES.*[\r\n]+.*WING-BODY.*TAIL'
-        print 'begin dynamic output'
-        t.lexer.begin('DYNAMIC')
+    def t_CASE_begin_DYNAMIC(self, t):
+        r'DYNAMIC\ DERIVATIVES'
+        t.lexer.push_state('DYNAMIC')
 
     def t_DYNAMIC_end_DYNAMIC(self, t):
         r'0'
-        print 'end dynamic output'
-        t.lexer.begin('INITIAL')
+        t.lexer.pop_state()
 
     def t_DYNAMIC_JUNKALL(self, t):
         r'.+'
@@ -153,9 +164,11 @@ class DatcomParser(Parser):
     def t_INITIAL_JUNKALL(self, t):
         r'.+'
 
+    def t_CASE_JUNKALL(self, t):
+        r'.+'
+
     def t_INPUT_COMMA(self, t):
         r','
-        #print t
         return t
 
     def t_INPUT_NAMELIST(self, t):
@@ -183,16 +196,13 @@ class DatcomParser(Parser):
 
     def t_INPUT_end_INPUT(self, t):
         r'1.*AUTOMATED\ STABILITY\ AND\ CONTROL\ METHODS.*'
-        #print 'ending input'
-        t.lexer.begin('INITIAL')
-
-    def t_INPUT_NEXTCASE(self, t):
-        r'.*NEXT\ CASE.*'
-        #print 'next case'
+        t.lexer.pop_state()
 
     def t_INPUT_CASEID(self, t):
-        r'.*CASEID (.*)'
-        print 'case: ', t.value
+        r'.*CASEID (?P<name>.*)'
+        t.value = t.lexer.lexmatch.group('name')
+        t.num = len(self.cases)
+        return t
 
     def t_INPUT_NAME(self, t):
         r'[a-zA-Z_][a-zA-Z0-9_]*'
@@ -247,6 +257,18 @@ class DatcomParser(Parser):
         """
         p[0] = [ p[1] ]
 
+    def p_newcase(self, p):
+        """
+        statement : NEWCASE
+        """
+        self.cases.append({})
+
+    def p_caseid(self, p):
+        """
+        statement : CASEID
+        """
+        self.cases[-1]['ID'] = p[1]
+
     def p_error(self, p):
         if p:
             print("Syntax error '%s' at line: %d" % 
@@ -259,8 +281,7 @@ class DatcomParser(Parser):
         """
         statement : NAMELIST terms ENDNAMELIST
         """
-        self.data[p[1]] = p[2]
-        return p
+        self.cases[-1][p[1]] = p[2]
 
     def p_float_term(self, p):
         """
@@ -284,37 +305,31 @@ class DatcomParser(Parser):
         """
         statement : NACA NAME INTEGER INTEGER
         """
-        self.data[p[2]] = p[4]
+        self.cases[-1][p[2]] = p[4]
 
     def p_dim(self, p):
         """
         statement : DIM NAME
         """
-        self.data[p[1]] = p[2]
+        self.cases[-1][p[1]] = p[2]
 
     def p_damp(self, p):
         """
         statement : DAMP
         """
-        self.data[p[1]] = True
+        self.cases[-1][p[1]] = True
 
     def p_part(self, p):
         """
         statement : PART
         """
-        self.data[p[1]] = True
+        self.cases[-1][p[1]] = True
 
     def p_deriv(self, p):
         """
         statement : DERIV NAME
         """
-        self.data[p[1]] = p[2]
-
-    def p_caseid(self, p):
-        """
-        statement : CASEID
-        """
-        self.data[p[1]] = p[1]
+        self.cases[-1][p[1]] = p[2]
 
     def p_term_terms(self, p):
         """
@@ -346,4 +361,6 @@ if __name__ == '__main__':
         parser = DatcomParser({
             'file_name':sys.argv[1]
             })
-    #print parser.data
+    print 'cases:'
+    for case in parser.cases:
+        print '\n', case.get('ID','UNKNOWN').strip(), '\n', case.keys()
