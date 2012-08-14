@@ -48,8 +48,8 @@ class Parser(object):
      
 class DatcomParser(Parser):
 
-    re_float = r'(\+|-)?\d+\.\d+(E(\+|-)?\d+)?'
-    re_float_vector = r'({f})(\s*,\s*{f})*'.format(f=re_float)
+    re_float = r'(\+|-)?\d*\.\d+(E(\+|-)?\d+)?'
+    re_float_vector = r'{f}([\n\s]*(,[\n\s]*{f})*)*'.format(f=re_float)
 
     states = (
         ('CASE','exclusive'),
@@ -57,7 +57,6 @@ class DatcomParser(Parser):
     )
 
     reserved_INPUT = {
-        'NACA' : 'NACA',
         'DIM'  : 'DIM',
         'DAMP'  : 'DAMP',
         'PART'  : 'PART',
@@ -83,6 +82,7 @@ class DatcomParser(Parser):
         'JETPWR']
 
     tokens = [
+        'AIRFOIL',
         'NAME',
         'LPAREN',
         'RPAREN',
@@ -112,7 +112,7 @@ class DatcomParser(Parser):
 
     t_INPUT_EQUALS  = r'='
 
-    t_INPUT_ignore = ''
+    t_INPUT_ignore = ' \r\n\t'
 
     def t_INPUT_BOOL(self, t):
         r'(\.TRUE\.|\.FALSE\.)'
@@ -213,6 +213,12 @@ class DatcomParser(Parser):
         #print 'end input'
         t.lexer.pop_state()
 
+    def t_INPUT_AIRFOIL(self, t):
+        r'NACA[-\s]+[WHVF][-\s]+\d[-\s](?P<number>[\d-]+)?'
+        print 'airfoil'
+        t.value = t.lexer.lexmatch.group('number')
+        return t
+
     def t_INPUT_CASEID(self, t):
         r'.*CASEID (?P<name>.*)'
         t.value = t.lexer.lexmatch.group('name').strip()
@@ -241,6 +247,7 @@ class DatcomParser(Parser):
             t.value = 0
         #print t
         return t
+
 
     def t_INPUT_ZEROLINE(self, t):
         r'0\s.*'
@@ -417,9 +424,9 @@ class DatcomParser(Parser):
 
     def p_airfoil(self, p):
         """
-        statement : NACA NAME INTEGER INTEGER
+        statement : AIRFOIL
         """
-        self.cases[-1][p[2]] = p[4]
+        self.cases[-1]['AIRFOIL'] = p[1]
 
     def p_dim(self, p):
         """
