@@ -93,6 +93,8 @@ class DatcomParser(Parser):
         'NEWCASE',
         'DYNAMICTABLE',
         'STATICTABLE',
+        'ASYFLAPTABLE',
+        'SYMFLAPTABLE',
         'FLOATVECTOR',
         'INTEGER',
         'EQUALS',
@@ -142,11 +144,6 @@ class DatcomParser(Parser):
         r'1\ END\ OF\ JOB\.'
         t.lexer.pop_state()
 
-    def t_STATIC_STATICTABLE(self, t):
-        r'([^0].+\n?)+'
-        #print 'static table'
-        return t
-
     def t_CASE_begin_DYNAMIC(self, t):
         r'DYNAMIC\ DERIVATIVES\ \(PER.*\n(0.*\n){3}'
         #print 'begin dynamic'
@@ -157,24 +154,25 @@ class DatcomParser(Parser):
         #print 'begin static'
         t.lexer.push_state('STATIC')
 
-    #def t_CASE_begin_SYMFLAP(self, t):
-        #r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL.*(.*\n){8}.*INCREMENTS\ DUE\ TO\ DEFLECTION.*'
-        #print 'begin symflap'
-        #t.lexer.push_state('SYMFLAP')
+    def t_CASE_begin_SYMFLAP(self, t):
+        r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL.*(.*\n){8}.*INCREMENTS\ DUE\ TO\ DEFLECTION.*'
+        print 'begin symflap'
+        t.lexer.push_state('SYMFLAP')
 
-    #def t_CASE_begin_ASYFLAP(self, t):
-        #r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL.*(.*\n){8}.*YAWING\ MOMNET\ COEFFICIENT.*'
-        #print 'begin aymflap'
-        #t.lexer.push_state('ASYFLAP')
+    def t_CASE_begin_ASYFLAP(self, t):
+        r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL.*(.*\n){8}.*YAWING\ MOMENT\ COEFFICIENT.*'
+        print 'begin asyflap'
+        t.lexer.push_state('ASYFLAP')
 
     def t_ASYFLAP_SYMFLAP_STATIC_DYNAMIC_end(self, t):
         r'0'
         #print 'end'
         t.lexer.pop_state()
 
-    def t_DYNAMIC_DYNAMICTABLE(self, t):
+    def t_ASYFLAP_SYMFLAP_STATIC_DYNAMIC_table(self, t):
         r'([^0].+\n?)+'
-        #print 'dynamic table'
+        state = t.lexer.lexstate
+        t.type = state+'TABLE'
         return t
 
     def t_INPUT_COMMA(self, t):
@@ -285,7 +283,7 @@ class DatcomParser(Parser):
         """
         self.cases[-1]['ID'] = p[1]
 
-    def parse_table(self,cols,data):
+    def parse_table1d(self,cols,data):
         table = {}
         colLastOld = -1
         for i in xrange(len(cols)):
@@ -314,7 +312,7 @@ class DatcomParser(Parser):
         """
         statement : DYNAMICTABLE
         """
-        self.cases[-1]['DYNAMIC'] = self.parse_table(
+        self.cases[-1]['DYNAMIC'] = self.parse_table1d(
             [['ALPHA', 10], ['CLQ', 13], ['CMQ', 13],
             ['CLAD', 13], ['CMAD', 13], ['CLP', 14],
             ['CYP', 13], ['CNP', 13], ['CNR', 13],
@@ -324,11 +322,48 @@ class DatcomParser(Parser):
         """
         statement : STATICTABLE
         """
-        self.cases[-1]['STATIC'] = self.parse_table(
+        self.cases[-1]['STATIC'] = self.parse_table1d(
             [['ALPHA', 8], ['CD', 9], ['CL', 9],
             ['CM', 10], ['CN', 8], ['CA', 9],
             ['XCP', 9], ['CLA', 13], ['CMA', 13],
             ['CYB', 13], ['CNB', 14], ['CLB', 13]], p[1])
+
+    def p_asyflaptable(self, p):
+        """
+        statement : ASYFLAPTABLE
+        """
+        print p[1]
+
+    def p_symflaptable(self, p):
+        """
+        statement : SYMFLAPTABLE
+        """
+        print p[1]
+
+    #def parse_table2d(self,cols,data):
+        #table = {}
+        #colLastOld = -1
+        #for i in xrange(len(cols)):
+            #colLast = colLastOld+cols[i][1]
+            #lines = data.split('\n')
+            #valList = []
+            #for j in xrange(len(lines)-1): # TODO why -1
+                #line = lines[j]
+                #col = line[colLastOld+1:colLast].strip()
+                #if col == '':
+                    #val = 0
+                #elif col == 'NDM':
+                    #val = 'NDM'                    
+                #elif col == 'NA':
+                    #val = 'NA'
+                #else:
+                    ##print 'raw: %11s' % col
+                    #val = float(col)
+                    ##print 'float: %11f\n' % val
+                #valList.append(val)
+            #table[cols[i][0]] = valList
+            #colLastOld = colLast
+        #return  table
 
     def p_error(self, p):
         if p:
