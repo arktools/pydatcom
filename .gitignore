@@ -2,9 +2,8 @@
 .*.swp
 *.ac
 *.csv
-*.dcm
 *.lfi
 *.xml
 *.dat
-_parsetab.py
+*_parsetab.py
 
