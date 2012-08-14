@@ -53,11 +53,7 @@ class DatcomParser(Parser):
 
     states = (
         ('CASE','exclusive'),
-        ('INPUT','exclusive'),
-        ('STATIC','exclusive'),
-        ('DYNAMIC','exclusive'),
-        ('SYMFLAP','exclusive'),
-        ('ASYFLAP','exclusive'),
+            ('INPUT','exclusive'),
     )
 
     reserved_INPUT = {
@@ -93,8 +89,8 @@ class DatcomParser(Parser):
         'NEWCASE',
         'DYNAMICTABLE',
         'STATICTABLE',
-        'ASYFLAPTABLE',
-        'SYMFLAPTABLE',
+        'ASYFLPTABLE',
+        'SYMFLPTABLE',
         'FLOATVECTOR',
         'INTEGER',
         'EQUALS',
@@ -142,37 +138,43 @@ class DatcomParser(Parser):
 
     def t_CASE_end_CASE(self, t):
         r'1\ END\ OF\ JOB\.'
+        #print 'end of job'
         t.lexer.pop_state()
 
-    def t_CASE_begin_DYNAMIC(self, t):
-        r'DYNAMIC\ DERIVATIVES\ \(PER.*\n(0.*\n){3}'
-        #print 'begin dynamic'
-        t.lexer.push_state('DYNAMIC')
+    def t_CASE_DYNAMICTABLE(self, t):
+        r'DYNAMIC\ DERIVATIVES\n(?P<config>.*)\n(?P<case>.*)\n(.*\n){2}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){2}0(?P<deriv_headers>.*)\n0.*\n(?P<deriv_table>([^0].*\n)+)'
+        match = t.lexer.lexmatch
+        t.value = {
+            'deriv_table' : match.group('deriv_table'),
+        }
+        #return t
 
-    def t_CASE_begin_STATIC(self, t):
-        r'.*DERIVATIVE\ \(PER.*\n(0.*\n){2}'
-        #print 'begin static'
-        t.lexer.push_state('STATIC')
+    def t_CASE_STATICTABLE(self, t):
+        r'CHARACTERISTICS\ AT\ ANGLE\ OF\ ATTACK.*\n(?P<config>.*)\n(?P<case>.*)\n(.*\n){2}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){1}0(?P<deriv_headers>.*)\n0.*\n(?P<deriv_table>([^0].*\n)+)'
+        match = t.lexer.lexmatch
+        t.value = {
+            'deriv_table' : match.group('deriv_table'),
+        }
+        return t
 
-    def t_CASE_begin_SYMFLAP(self, t):
-        r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL.*(.*\n){8}.*INCREMENTS\ DUE\ TO\ DEFLECTION.*'
-        print 'begin symflap'
-        t.lexer.push_state('SYMFLAP')
+    def t_CASE_SYMFLPTABLE(self, t):
+        r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL\ DEVICES.*\n(?P<config>.*)\n(?P<case>.*)\n(.*\n){1}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){1}0(?P<deriv_headers>.*)\n(.*\n){2}(?P<deriv_table>([^0].*\n)+)(.*\n){2}.*INDUCED\ DRAG\ COEFFICIENT\ INCREMENT.*\n(?P<deflection>.*)\n(.*\n){2}(?P<drag_table>([^0].*\n)+)'  
+        match = t.lexer.lexmatch
+        t.value = {
+            'deriv_table' : match.group('deriv_table'),
+            'deflection' : match.group('deflection'),
+            'drag_table' : match.group('drag_table'),
+        }
+        return t
 
-    def t_CASE_begin_ASYFLAP(self, t):
-        r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL.*(.*\n){8}.*YAWING\ MOMENT\ COEFFICIENT.*'
-        print 'begin asyflap'
-        t.lexer.push_state('ASYFLAP')
-
-    def t_ASYFLAP_SYMFLAP_STATIC_DYNAMIC_end(self, t):
-        r'0'
-        #print 'end'
-        t.lexer.pop_state()
-
-    def t_ASYFLAP_SYMFLAP_STATIC_DYNAMIC_table(self, t):
-        r'([^0].+\n?)+'
-        state = t.lexer.lexstate
-        t.type = state+'TABLE'
+    def t_CASE_ASYFLPTABLE(self, t):
+        r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL\ DEVICES.*\n(?P<config>.*)\n(?P<case>.*)\n(.*\n){1}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){1}0(?P<deflection>.*)\n(.*\n){2}(?P<yaw_table>([^0].*\n)+)(.*\n){3}(?P<roll_table>([^1].*\n)+)'  
+        match = t.lexer.lexmatch
+        t.value = {
+            'deflection' : match.group('deflection'),
+            'yaw_table' : match.group('yaw_table'),
+            'roll_table' : match.group('roll_table'),
+        }
         return t
 
     def t_INPUT_COMMA(self, t):
@@ -316,7 +318,8 @@ class DatcomParser(Parser):
             [['ALPHA', 10], ['CLQ', 13], ['CMQ', 13],
             ['CLAD', 13], ['CMAD', 13], ['CLP', 14],
             ['CYP', 13], ['CNP', 13], ['CNR', 13],
-            ['CLR', 14]], p[1])
+            ['CLR', 14]],
+            p[1]['deriv_table'])
 
     def p_statictable(self, p):
         """
@@ -326,19 +329,30 @@ class DatcomParser(Parser):
             [['ALPHA', 8], ['CD', 9], ['CL', 9],
             ['CM', 10], ['CN', 8], ['CA', 9],
             ['XCP', 9], ['CLA', 13], ['CMA', 13],
-            ['CYB', 13], ['CNB', 14], ['CLB', 13]], p[1])
+            ['CYB', 13], ['CNB', 14], ['CLB', 13]],
+            p[1]['deriv_table'])
 
-    def p_asyflaptable(self, p):
+    def p_syMflptable(self, p):
         """
-        statement : ASYFLAPTABLE
+        statement : SYMFLPTABLE
         """
-        print p[1]
+        self.cases[-1]['CNTRL_DERIV'] = \
+            p[1]['deriv_table']
+        self.cases[-1]['CNTRL_DRAG'] = \
+            p[1]['drag_table']
+        self.cases[-1]['CNTRL_DEFLECT'] = \
+            p[1]['deflection']
 
-    def p_symflaptable(self, p):
+    def p_asymflptable(self, p):
         """
-        statement : SYMFLAPTABLE
+        statement : ASYFLPTABLE
         """
-        print p[1]
+        self.cases[-1]['CNTRL_YAW'] = \
+            p[1]['yaw_table']
+        self.cases[-1]['CNTRL_ROLL'] = \
+            p[1]['roll_table']
+        self.cases[-1]['CNTRL_DEFLECT'] = \
+            p[1]['deflection']
 
     #def parse_table2d(self,cols,data):
         #table = {}
