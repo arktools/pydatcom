@@ -1,26 +1,32 @@
-{%- macro print_table1d(table,x,indent='      ') -%}
-  { {%- for row in table -%}
-      {{'\n'}}{{indent}}{ {{- x[loop.index0]}},{{row -}} }
-    {%- if not loop.last %},{% endif -%}
-  {%- endfor -%} }
-{%- endmacro -%}
+# macro print_table1d(table,x,indent='      ')
+  {
+  #- for row in table
+      {{'\n'}}{{indent}}{{- "%4g,%10g"|format(x[loop.index0],row) -}}
+    {%- if not loop.last -%},{%- endif %}
+  #- endfor
+}
+#- endmacro
 
-{%- macro print_table2d(table,x,y,indent='      ') -%}
-    { {{-'\n'}}{{indent}}{0,
-  {%- for xI in x -%}
-    {{xI}}
+# macro print_table2d(table,x,y,indent='      ')
+    { {{-'\n'}}{{indent}}{ {{- "%4g"|format(0)}},
+  #- for yI in y
+    {{- "%10g"|format(yI) -}}
     {%- if not loop.last %},{% endif %}
-  {%- endfor -%} },
-  {%- for row in table -%}
+  #- endfor
+  },
+  #- for row in table
     {{'\n'}}{{indent}}{ 
-    {%- for entry in row -%}
-      {%- if loop.first -%}
-        {{y[loop.index0]}},
-      {%- endif -%}
-      {{entry}}{% if not loop.last %},{% endif %}
-    {%- endfor -%} } {%- if not loop.last %},{% endif %}
-  {%- endfor -%} }
-{%- endmacro -%}
+    #- set rowNum=loop.index0
+    #- for entry in row
+      #- if loop.first
+        {{- "%4g"|format(x[rowNum]) -}},
+      #- endif
+      {{- "%10g"|format(entry) -}}{% if not loop.last %},{% endif %}
+    #- endfor
+}{%- if not loop.last %},{% endif %}
+  #- endfor
+}
+#- endmacro
 
 package {{name}}
 
@@ -60,8 +66,8 @@ package {{name}}
     dCn_Aileron  = {{ print_table2d(dCn_Aileron,alpha,alrn) }},
     dCn_Beta  = {{ print_table1d(dCn_Beta,alpha) }},
     dCn_RollRate  = {{ print_table1d(dCn_RollRate,alpha) }},
-    dCn_YawRate  = {{ print_table1d(dCn_YawRate,alpha) }};
-
+    dCn_YawRate  = {{ print_table1d(dCn_YawRate,alpha) }},
+  );
 end {{name}};
 
 // vim:ts=2:sw=2:expandtab

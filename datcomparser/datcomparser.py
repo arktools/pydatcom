@@ -541,7 +541,8 @@ class DatcomExporter(object):
     def __init__(self,parser_cases,template_file=None):
 
         env = Environment(
-            loader=PackageLoader('datcomparser','templates'))
+            loader=PackageLoader('datcomparser','templates'),
+            line_statement_prefix='#')
         template = env.get_template(template_file)
 
         # find cases
