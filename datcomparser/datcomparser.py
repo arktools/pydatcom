@@ -162,7 +162,7 @@ class DatcomParser(Parser):
         return t
 
     def t_CASE_SYMFLPTABLE(self, t):
-        r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL\ DEVICES.*\n(?P<config>.*)\n(?P<case>.*)\n(.*\n){1}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){1}0(?P<deriv_headers>.*)\n(.*\n){2}(?P<deriv_table>([^\d\n].*\n)+)(.*\n){2}.*INDUCED\ DRAG\ COEFFICIENT\ INCREMENT.*\n(?P<deflection>.*)\n(.*\n){2}(?P<drag_table>([^\d\n].*\n)+)'  
+        r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL\ DEVICES.*\n(?P<config>.*)\n(?P<case>.*)\n(.*\n){1}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){1}0(?P<deriv_headers>.*)\n(.*\n){2}(?P<deriv_table>([^\d\n].*\n)+)(.*\n){2}.*INDUCED\ DRAG\ COEFFICIENT\ INCREMENT.*\n.*DELTA\ =(?P<deflection>.*)\n(.*\n){2}(?P<drag_table>([^\d\n].*\n)+)'  
         match = t.lexer.lexmatch
         t.value = {
             'deriv_table' : match.group('deriv_table'),
@@ -173,7 +173,7 @@ class DatcomParser(Parser):
         return t
 
     def t_CASE_ASYFLPTABLE(self, t):
-        r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL\ DEVICES.*\n(?P<config>.*)\n(?P<case>.*)\n(.*\n){1}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){1}0(?P<deflection>.*)\n(.*\n){2}(?P<yaw_table>([^0].*\n)+)(.*\n){3}(?P<roll_table>([^1].*\n)+)'  
+        r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL\ DEVICES.*\n(?P<config>.*)\n(?P<case>.*)\n(.*\n){1}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){1}.*(DELTAL-DELTAR)=(?P<deflection>.*)\n(.*\n){2}(?P<yaw_table>([^0].*\n)+)(.*\n){3}(?P<roll_table>([^1].*\n)+)'  
         match = t.lexer.lexmatch
         t.value = {
             'deflection' : match.group('deflection'),
@@ -311,12 +311,18 @@ class DatcomParser(Parser):
         """
         self.cases[-1]['ID'] = p[1]
 
+    def parse_vector(self,data):
+        vector = []
+        for val in data.split():
+            vector.append(float(val))
+        return vector
+
     def parse_table1d(self,cols,data):
         table = {}
         colLastOld = -1
+        lines = data.split('\n')
         for i in xrange(len(cols)):
             colLast = colLastOld+cols[i][1]
-            lines = data.split('\n')
             valList = []
             for j in xrange(len(lines)-1): # TODO why -1
                 line = lines[j]
@@ -372,49 +378,61 @@ class DatcomParser(Parser):
              ['D(CD MIN)',13],['(CLA)D',25],
              ['(CH)A',12],['(CH)D',11]],
              p[1]['deriv_table'])
-        self.cases[-1]['CNTRL_DRAG'] = \
-            p[1]['drag_table']
-        self.cases[-1]['CNTRL_DEFLECT'] = \
-            p[1]['deflection']
+        (self.cases[-1]['CNTRL_DRAG_ALPHA'],
+         self.cases[-1]['CNTRL_DRAG']) = \
+                self.parse_table2d(9,
+            [16,10,10,10,10,10,10,10,10,10],
+            p[1]['drag_table'])
+        self.cases[-1]['SYMFLP_DEFLECT'] = \
+            self.parse_vector(p[1]['deflection'])
+        #print self.cases[-1]['CNTRL_DEFLECT']
+        #print self.cases[-1]['CNTRL_DRAG']
 
     def p_asymflptable(self, p):
         """
         statement : ASYFLPTABLE
         """
-        self.cases[-1]['CNTRL_YAW'] = \
-            p[1]['yaw_table']
+        (self.cases[-1]['CNTRL_DRAG_ALPHA'],
+         self.cases[-1]['CNTRL_YAW']) = \
+                self.parse_table2d(7,
+            [18,12,12,12,12,12,12,12,12],
+            p[1]['yaw_table'])
         self.cases[-1]['CNTRL_ROLL'] = \
                 self.parse_table1d(
            [['DELTAL',51], ['DELTAR', 16],
             ['CL(ROLL)', 22]],
             p[1]['roll_table'])
-        self.cases[-1]['CNTRL_DEFLECT'] = \
-            p[1]['deflection']
+        self.cases[-1]['ASYFLP_DEFLECT'] = \
+            self.parse_vector(p[1]['deflection'])
 
-    #def parse_table2d(self,cols,data):
-        #table = {}
-        #colLastOld = -1
-        #for i in xrange(len(cols)):
-            #colLast = colLastOld+cols[i][1]
-            #lines = data.split('\n')
-            #valList = []
-            #for j in xrange(len(lines)-1): # TODO why -1
-                #line = lines[j]
-                #col = line[colLastOld+1:colLast].strip()
-                #if col == '':
-                    #val = 0
-                #elif col == 'NDM':
-                    #val = 'NDM'                    
-                #elif col == 'NA':
-                    #val = 'NA'
-                #else:
-                    ##print 'raw: %11s' % col
-                    #val = float(col)
-                    ##print 'float: %11f\n' % val
-                #valList.append(val)
-            #table[cols[i][0]] = valList
-            #colLastOld = colLast
-        #return  table
+    def parse_table2d(self,rowWidth,
+                      colWidths,data):
+        colLastOld = -1
+        dataArray = []
+        rows = []
+        lines = data.split('\n')
+
+        for i in xrange(len(lines)-1): # TODO why -1
+            line = lines[i]
+            rows.append(float(line[0:rowWidth-1]))
+            colLastOld = rowWidth
+            dataArray.append([])
+            for j in xrange(len(colWidths)):
+                colLast = colLastOld+colWidths[j]
+                col = line[colLastOld+1:colLast].strip()
+                if col == '':
+                    val = 0
+                elif col == 'NDM':
+                    val = 'NDM'                    
+                elif col == 'NA':
+                    val = 'NA'
+                else:
+                    #print 'raw: %11s' % col
+                    val = float(col)
+                    #print 'float: %11f\n' % val
+                dataArray[-1].append(val)
+        
+        return (rows, dataArray) 
 
     def p_error(self, p):
         if p:
