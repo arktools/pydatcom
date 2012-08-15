@@ -1,0 +1,275 @@
+ THIS SOFTWARE AND ANY ACCOMPANYING DOCUMENTATION
+ IS RELEASED "AS IS".  THE U.S. GOVERNMENT MAKES NO
+ WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, CONCERNING
+ THIS SOFTWARE AND ANY ACCOMPANYING DOCUMENTATION,
+ INCLUDING, WITHOUT LIMITATION, ANY WARRANTIES OF
+ MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+ IN NO EVENT WILL THE U.S. GOVERNMENT BE LIABLE FOR ANY
+ DAMAGES, INCLUDING LOST PROFITS, LOST SAVINGS OR OTHER
+ INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE 
+ USE, OR INABILITY TO USE, THIS SOFTWARE OR ANY
+ ACCOMPANYING DOCUMENTATION, EVEN IF INFORMED IN ADVANCE
+ OF THE POSSIBILITY OF SUCH DAMAGES.
+
+
+
+
+
+
+
+
+                                        ****************************************************
+                                        *    USAF STABILITY AND CONTROL  DIGITAL DATCOM    *
+                                        *    PROGRAM REV. JAN 96   DIRECT INQUIRIES TO:    *
+                                        *   WRIGHT LABORATORY  (WL/FIGC)  ATTN: W. BLAKE   *
+                                        *         WRIGHT PATTERSON AFB, OHIO  45433        *
+                                        *    PHONE (513) 255-6764,   FAX (513) 258-4054    *
+                                        ****************************************************
+1                         CONERR - INPUT ERROR CHECKING
+0 ERROR CODES - N* DENOTES THE NUMBER OF OCCURENCES OF EACH ERROR
+0 A - UNKNOWN VARIABLE NAME
+0 B - MISSING EQUAL SIGN FOLLOWING VARIABLE NAME
+0 C - NON-ARRAY VARIABLE HAS AN ARRAY ELEMENT DESIGNATION - (N)
+0 D - NON-ARRAY VARIABLE HAS MULTIPLE VALUES ASSIGNED
+0 E - ASSIGNED VALUES EXCEED ARRAY DIMENSION
+0 F - SYNTAX ERROR
+
+0******************************  INPUT DATA CARDS  ******************************
+
+ NACA W 5 65415                                                                  
+ NACA V 4 0009                                                                   
+ NACA H 4 0009                                                                   
+ NACA F 4 0009                                                                   
+  $FLTCON NMACH=1.0,                                                             
+          MACH(1)=0.2418852,                                                     
+          NALPHA=20.0,                                                           
+          ALSCHD(1)= -8.0, -6.0, -4.0, -2.0,  0.0,                               
+                      2.0,  3.0,  4.0,  5.0,  6.0,                               
+                      7.0,  8.0,  9.0,  10.0, 11.0,                              
+                     12.0, 14.0, 16.0, 18.0, 20.0,                               
+          NALT=3.0,                                                              
+          ALT(1)=0.0, 10000.0, 20000.0,                                          
+          STMACH=0.6,                                                            
+          TSMACH=1.4,                                                            
+          TR=1.0,                                                                
+          LOOP=1.0$                                                              
+  $OPTINS ROUGFC=0.30E-3,                                                        
+          SREF=208.7, CBARR=5.18, BLREF=38.906$                                  
+  $SYNTHS XCG=9.46, ZCG=0.0,                                                     
+          XW=6.73, ZW=2.49, ALIW=3.7,                                            
+          XH=24.9, ZH=4.17, ALIH=0.0, HINAX=25.9,                                
+          VERTUP=.TRUE., SCALE=1.0,                                              
+          XV=20.0, ZV=4.0,                                                       
+          XVF=19.5,ZVF=5.0$                                                      
+  $BODY   NX=6.0,                                                                
+          X(1) =0.0,  1.54, 6.56, 9.25, 15.7,  26.6,                             
+          R(1) =0.0,  0.98, 2.03, 2.03,  2.03,  0.0,                             
+          ZU(1)=3.61, 4.49, 5.31, 6.43,  5.64,  4.63,                            
+          ZL(1)=3.61, 2.82, 2.46, 2.23,  2.07,  3.58,                            
+          ITYPE=1.0, METHOD=1.0$                                                 
+  $WGPLNF CHRDTP=5.41, SSPNOP=14.8, SSPNE=17.5, SSPN=19.4,                       
+          CHRDBP=5.42, CHRDR=7.36, SAVSI=25.0, CHSTAT=0.0,                       
+          TWISTA=-3.0, DHDADI=7.0, DHDADO=7.0, TYPE=1.0$                         
+  $VTPLNF CHRDTP=2.62, SSPNE=4.92, SSPN=6.23, CHRDR=6.56,                        
+          SAVSI=39.8, CHSTAT=0.0, TYPE=1.0$                                      
+  $VFPLNF CHRDTP=0.0, SSPNE=0.75, SSPN=2.39, CHRDR=5.31,                         
+          SAVSI=66.5, CHSTAT=0.0, TYPE=1.0$                                      
+  $HTPLNF CHRDTP=2.89, SSPNE=6.16, SSPN=6.76, CHRDR=2.89,                        
+          SAVSI=0.0, CHSTAT=0.0, TWISTA=0.0, DHDADI=0.0,                         
+          TYPE=1.0$                                                              
+  $PROPWR AIETLP=0.0,NENGSP=2.0,THSTCP=0.0,                                      
+          PHALOC=4.5,PHVLOC=4.0,PRPRAD=3.75,                                     
+          ENGFCT=0.8,NOPBPE=3.0,                                                 
+          YP=6.0,CROT=.FALSE.$                                                   
+ CASEID TOTAL AIRCRAFT                                                           
+1          THE FOLLOWING IS A LIST OF ALL INPUT CARDS FOR THIS CASE.
+0
+ NACA W 5 65415                                                                  
+ NACA V 4 0009                                                                   
+ NACA H 4 0009                                                                   
+ NACA F 4 0009                                                                   
+  $FLTCON NMACH=1.0,                                                             
+          MACH(1)=0.2418852,                                                     
+          NALPHA=20.0,                                                           
+          ALSCHD(1)= -8.0, -6.0, -4.0, -2.0,  0.0,                               
+                      2.0,  3.0,  4.0,  5.0,  6.0,                               
+                      7.0,  8.0,  9.0,  10.0, 11.0,                              
+                     12.0, 14.0, 16.0, 18.0, 20.0,                               
+          NALT=3.0,                                                              
+          ALT(1)=0.0, 10000.0, 20000.0,                                          
+          STMACH=0.6,                                                            
+          TSMACH=1.4,                                                            
+          TR=1.0,                                                                
+          LOOP=1.0$                                                              
+  $OPTINS ROUGFC=0.30E-3,                                                        
+          SREF=208.7, CBARR=5.18, BLREF=38.906$                                  
+  $SYNTHS XCG=9.46, ZCG=0.0,                                                     
+          XW=6.73, ZW=2.49, ALIW=3.7,                                            
+          XH=24.9, ZH=4.17, ALIH=0.0, HINAX=25.9,                                
+          VERTUP=.TRUE., SCALE=1.0,                                              
+          XV=20.0, ZV=4.0,                                                       
+          XVF=19.5,ZVF=5.0$                                                      
+  $BODY   NX=6.0,                                                                
+          X(1) =0.0,  1.54, 6.56, 9.25, 15.7,  26.6,                             
+          R(1) =0.0,  0.98, 2.03, 2.03,  2.03,  0.0,                             
+          ZU(1)=3.61, 4.49, 5.31, 6.43,  5.64,  4.63,                            
+          ZL(1)=3.61, 2.82, 2.46, 2.23,  2.07,  3.58,                            
+          ITYPE=1.0, METHOD=1.0$                                                 
+  $WGPLNF CHRDTP=5.41, SSPNOP=14.8, SSPNE=17.5, SSPN=19.4,                       
+          CHRDBP=5.42, CHRDR=7.36, SAVSI=25.0, CHSTAT=0.0,                       
+          TWISTA=-3.0, DHDADI=7.0, DHDADO=7.0, TYPE=1.0$                         
+  $VTPLNF CHRDTP=2.62, SSPNE=4.92, SSPN=6.23, CHRDR=6.56,                        
+          SAVSI=39.8, CHSTAT=0.0, TYPE=1.0$                                      
+  $VFPLNF CHRDTP=0.0, SSPNE=0.75, SSPN=2.39, CHRDR=5.31,                         
+          SAVSI=66.5, CHSTAT=0.0, TYPE=1.0$                                      
+  $HTPLNF CHRDTP=2.89, SSPNE=6.16, SSPN=6.76, CHRDR=2.89,                        
+          SAVSI=0.0, CHSTAT=0.0, TWISTA=0.0, DHDADI=0.0,                         
+          TYPE=1.0$                                                              
+  $PROPWR AIETLP=0.0,NENGSP=2.0,THSTCP=0.0,                                      
+          PHALOC=4.5,PHVLOC=4.0,PRPRAD=3.75,                                     
+          ENGFCT=0.8,NOPBPE=3.0,                                                 
+          YP=6.0,CROT=.FALSE.$                                                   
+ CASEID TOTAL AIRCRAFT                                                           
+0 INPUT DIMENSIONS ARE IN FT, SCALE FACTOR IS 1.0000
+
+0*** ERROR *** LOOP = 1 AND NALT IS NOT EQUAL TO NMACH (NALT =  1, NMACH =  3)
+               NMACH AND NALT ARE BOTH SET TO  1
+
+1                             AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM   
+                                                        WING SECTION DEFINITION
+0                                 IDEAL ANGLE OF ATTACK =   3.32489 DEG.
+
+                              ZERO LIFT ANGLE OF ATTACK =  -3.42842 DEG.
+
+                                 IDEAL LIFT COEFFICIENT =    .79584
+
+                  ZERO LIFT PITCHING MOMENT COEFFICIENT =   -.06025
+
+                             MACH ZERO LIFT-CURVE-SLOPE =    .09637 /DEG.
+
+                                    LEADING EDGE RADIUS =    .02479 FRACTION CHORD
+
+                              MAXIMUM AIRFOIL THICKNESS =    .15000 FRACTION CHORD
+
+                                                DELTA-Y =   3.96122 PERCENT CHORD
+
+
+0                         MACH=  .2419 LIFT-CURVE-SLOPE =    .09747 /DEG.      XAC =    .25287
+1                             AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM   
+                                                   HORIZONTAL TAIL SECTION DEFINITION
+0                                 IDEAL ANGLE OF ATTACK =    .00000 DEG.
+
+                              ZERO LIFT ANGLE OF ATTACK =    .00000 DEG.
+
+                                 IDEAL LIFT COEFFICIENT =    .00000
+
+                  ZERO LIFT PITCHING MOMENT COEFFICIENT =    .00000
+
+                             MACH ZERO LIFT-CURVE-SLOPE =    .09830 /DEG.
+
+                                    LEADING EDGE RADIUS =    .00893 FRACTION CHORD
+
+                              MAXIMUM AIRFOIL THICKNESS =    .09000 FRACTION CHORD
+
+                                                DELTA-Y =   2.37673 PERCENT CHORD
+
+
+0                         MACH=  .2419 LIFT-CURVE-SLOPE =    .10094 /DEG.      XAC =    .25686
+1                             AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM   
+                                                    VERTICAL TAIL SECTION DEFINITION
+0                                 IDEAL ANGLE OF ATTACK =    .00000 DEG.
+
+                              ZERO LIFT ANGLE OF ATTACK =    .00000 DEG.
+
+                                 IDEAL LIFT COEFFICIENT =    .00000
+
+                  ZERO LIFT PITCHING MOMENT COEFFICIENT =    .00000
+
+                             MACH ZERO LIFT-CURVE-SLOPE =    .09830 /DEG.
+
+                                    LEADING EDGE RADIUS =    .00893 FRACTION CHORD
+
+                              MAXIMUM AIRFOIL THICKNESS =    .09000 FRACTION CHORD
+
+                                                DELTA-Y =   2.37673 PERCENT CHORD
+
+
+0                         MACH=  .2419 LIFT-CURVE-SLOPE =    .10094 /DEG.      XAC =    .25686
+1                             AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM   
+                                                     VENTRAL FIN SECTION DEFINITION
+0                                 IDEAL ANGLE OF ATTACK =    .00000 DEG.
+
+                              ZERO LIFT ANGLE OF ATTACK =    .00000 DEG.
+
+                                 IDEAL LIFT COEFFICIENT =    .00000
+
+                  ZERO LIFT PITCHING MOMENT COEFFICIENT =    .00000
+
+                             MACH ZERO LIFT-CURVE-SLOPE =    .09830 /DEG.
+
+                                    LEADING EDGE RADIUS =    .00893 FRACTION CHORD
+
+                              MAXIMUM AIRFOIL THICKNESS =    .09000 FRACTION CHORD
+
+                                                DELTA-Y =   2.37673 PERCENT CHORD
+
+
+0                         MACH=  .2419 LIFT-CURVE-SLOPE =    .10094 /DEG.      XAC =    .25686
+1                               AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                         CHARACTERISTICS AT ANGLE OF ATTACK AND IN SIDESLIP
+                                  WING-BODY-HORIZONTAL TAIL-VERTICAL TAIL-VENTRAL FIN CONFIGURATION
+                               PROPELLER POWER EFFECTS INCLUDED IN THE LONGITUDINAL STABILITY RESULTS
+                                                          TOTAL AIRCRAFT
+ 
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+             FT       FT/SEC     LB/FT**2       DEG R         1/FT               FT**2        FT        FT        FT        FT
+0  .242        .00     270.02   2.1162E+03     518.670     1.7097E+06           208.700      5.180    38.906     9.460      .000
+0                                                               -------------------DERIVATIVE (PER DEGREE)-------------------
+0 ALPHA     CD       CL       CM       CN       CA       XCP        CLA          CMA          CYB          CNB          CLB
+0
+   -8.0     .023    -.318     .2586   -.318    -.022    -.812    9.420E-02   -2.225E-02   -8.926E-03    1.041E-03   -2.576E-03
+   -6.0     .018    -.132     .2076   -.133     .004   -1.558    9.368E-02   -2.803E-02                             -2.902E-03
+   -4.0     .016     .053     .1559    .052     .020    3.006    9.488E-02   -2.893E-02                             -3.225E-03
+   -2.0     .018     .244     .1009    .244     .027     .414    9.784E-02   -3.000E-02                             -3.561E-03
+     .0     .024     .442     .0444    .442     .024     .101    1.006E-01   -3.138E-02                             -3.909E-03
+    2.0     .034     .644    -.0165    .645     .011    -.026    1.027E-01   -3.324E-02                             -4.268E-03
+    3.0     .041     .746    -.0482    .747     .001    -.064    1.038E-01   -3.420E-02                             -4.450E-03
+    4.0     .048     .850    -.0810    .851    -.011    -.095    1.050E-01   -3.560E-02                             -4.635E-03
+    5.0     .057     .955    -.1155    .956    -.026    -.121    1.062E-01   -3.747E-02                             -4.823E-03
+    6.0     .067    1.061    -.1520   1.062    -.044    -.143    1.044E-01   -3.911E-02                             -5.013E-03
+    7.0     .077    1.162    -.1897   1.163    -.065    -.163    9.647E-02   -4.076E-02                             -5.192E-03
+    8.0     .087    1.252    -.2292   1.252    -.088    -.183    8.652E-02   -4.346E-02                             -5.347E-03
+    9.0     .097    1.334    -.2716   1.332    -.113    -.204    7.878E-02   -4.555E-02                             -5.483E-03
+   10.0     .107    1.408    -.3150   1.405    -.140    -.224    7.185E-02   -4.741E-02                             -5.604E-03
+   11.0     .116    1.475    -.3608   1.470    -.168    -.245    6.423E-02   -4.946E-02                             -5.707E-03
+   12.0     .125    1.534    -.4078   1.527    -.197    -.267    5.529E-02   -5.077E-02                             -5.792E-03
+   14.0     .142    1.624     .0212   1.610    -.255     .013    2.569E-02      NA                                  -5.895E-03
+   16.0     .148    1.633     .0286   1.610    -.308     .018   -7.731E-02      NA                                  -5.831E-03
+   18.0     .116    1.306     .0468   1.278    -.293     .037   -1.815E-01      NA                                  -5.013E-03
+   20.0     .104     .896     .0624    .877    -.208     .071   -2.238E-01      NA                                  -4.033E-03
+0                                    ALPHA     Q/QINF    EPSLON  D(EPSLON)/D(ALPHA)
+0
+                                     -8.0      1.000     -1.056         .497
+                                     -6.0      1.000      -.063         .501
+                                     -4.0      1.000       .949         .515
+                                     -2.0      1.000      1.997         .532
+                                       .0      1.000      3.077         .542
+                                      2.0      1.000      4.165         .543
+                                      3.0      1.000      4.707         .540
+                                      4.0      1.000      5.246         .538
+                                      5.0      1.000      5.782         .530
+                                      6.0      1.000      6.306         .514
+                                      7.0      1.000      6.811         .475
+                                      8.0      1.000      7.257         .414
+                                      9.0      1.000      7.639         .375
+                                     10.0      1.000      8.007         .349
+                                     11.0      1.000      8.338         .312
+                                     12.0      1.000      8.631         .267
+                                     14.0      1.000      9.059         .096
+                                     16.0       .926      9.014        -.307
+                                     18.0      1.000      7.830        -.782
+                                     20.0      1.000      5.887        -.972
+0*** NA PRINTED WHEN METHOD NOT APPLICABLE
+1 END OF JOB.

@@ -48,7 +48,7 @@ class Parser(object):
      
 class DatcomParser(Parser):
 
-    re_float = r'(\+|-)?\d*\.\d+(E(\+|-)?\d+)?'
+    re_float = r'(\+|-)?((\d*\.\d+)|(\d+\.))(E(\+|-)?\d+)?'
     re_float_vector = r'{f}([\n\s]*(,[\n\s]*{f})*)*'.format(f=re_float)
 
     states = (
@@ -57,6 +57,7 @@ class DatcomParser(Parser):
     )
 
     reserved_INPUT = {
+        'TRIM'  : 'TRIM',
         'DIM'  : 'DIM',
         'DAMP'  : 'DAMP',
         'PART'  : 'PART',
@@ -142,7 +143,7 @@ class DatcomParser(Parser):
         t.lexer.pop_state()
 
     def t_CASE_DYNAMICTABLE(self, t):
-        r'DYNAMIC\ DERIVATIVES\n(?P<config>.*)\n(?P<case>.*)\n(.*\n){2}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){2}0(?P<deriv_headers>.*)\n0.*\n(?P<deriv_table>([^0].*\n)+)'
+        r'DYNAMIC\ DERIVATIVES\n(?P<config>.*)\n(?P<case>.*)\n(.*\n){2}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){2}0(?P<deriv_headers>.*)\n0.*\n(?P<deriv_table>([^\d\n].*\n)+)'
         match = t.lexer.lexmatch
         t.value = {
             'deriv_table' : match.group('deriv_table'),
@@ -151,7 +152,7 @@ class DatcomParser(Parser):
         return t
 
     def t_CASE_STATICTABLE(self, t):
-        r'CHARACTERISTICS\ AT\ ANGLE\ OF\ ATTACK.*\n(?P<config>.*(\n.*POWER.*)?)\n(?P<case>.*)\n(.*\n){2}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){1}0(?P<deriv_headers>.*)\n0.*\n(?P<deriv_table>([^0].*\n)+)'
+        r'CHARACTERISTICS\ AT\ ANGLE\ OF\ ATTACK.*\n(?P<config>.*(\n.*POWER.*)?)\n(?P<case>.*)\n(.*\n){2}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){1}0(?P<deriv_headers>.*)\n0.*\n(?P<deriv_table>([^\d\n].*\n)+)'
         match = t.lexer.lexmatch
         t.value = {
             'deriv_table' : match.group('deriv_table'),
@@ -160,7 +161,7 @@ class DatcomParser(Parser):
         return t
 
     def t_CASE_SYMFLPTABLE(self, t):
-        r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL\ DEVICES.*\n(?P<config>.*)\n(?P<case>.*)\n(.*\n){1}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){1}0(?P<deriv_headers>.*)\n(.*\n){2}(?P<deriv_table>([^0].*\n)+)(.*\n){2}.*INDUCED\ DRAG\ COEFFICIENT\ INCREMENT.*\n(?P<deflection>.*)\n(.*\n){2}(?P<drag_table>([^0].*\n)+)'  
+        r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL\ DEVICES.*\n(?P<config>.*)\n(?P<case>.*)\n(.*\n){1}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){1}0(?P<deriv_headers>.*)\n(.*\n){2}(?P<deriv_table>([^\d\n].*\n)+)(.*\n){2}.*INDUCED\ DRAG\ COEFFICIENT\ INCREMENT.*\n(?P<deflection>.*)\n(.*\n){2}(?P<drag_table>([^\d\n].*\n)+)'  
         match = t.lexer.lexmatch
         t.value = {
             'deriv_table' : match.group('deriv_table'),
@@ -215,7 +216,7 @@ class DatcomParser(Parser):
 
     def t_INPUT_AIRFOIL(self, t):
         r'NACA[-\s]+[WHVF][-\s]+\d[-\s](?P<number>[\d-]+)?'
-        print 'airfoil'
+        #print 'airfoil'
         t.value = t.lexer.lexmatch.group('number')
         return t
 
@@ -243,14 +244,17 @@ class DatcomParser(Parser):
                 vector.append(float(num)) 
             t.value = vector
         except ValueError:
-            print("Could not create float from %s" % t.value)
+            p_error(t)
             t.value = 0
         #print t
         return t
 
+    def t_INPUT_ERROR(self, t):
+        r'0.*ERROR.*\n(.+\n)'
+        print 'error: %s' % t.value
 
     def t_INPUT_ZEROLINE(self, t):
-        r'0\s.*'
+        r'0.*'
         #print 'zeroline'
 
     def t_ANY_INTEGER(self, t):
@@ -258,7 +262,7 @@ class DatcomParser(Parser):
         try:
             t.value = int(t.value)
         except ValueError:
-            print("Could not create int from %s" % t.value)
+            p_error(t)
             t.value = 0
         #print t
         return t
@@ -314,7 +318,10 @@ class DatcomParser(Parser):
                     val = 'NA'
                 else:
                     #print 'raw: %11s' % col
-                    val = float(col)
+                    try:
+                        val = float(col)
+                    except ValueError:
+                        print 'could not cast "%s" to float' % col
                     #print 'float: %11f\n' % val
                 valList.append(val)
             table[cols[i][0]] = valList
@@ -392,8 +399,7 @@ class DatcomParser(Parser):
 
     def p_error(self, p):
         if p:
-            print("Syntax error '%s' at line: %d" % 
-                  (p.value, self.lex.lineno))
+            print("Syntax error '%s' at line: %d, state: %s" % (p.value, self.lex.lineno, self.lex.lexstate))
         else:
             print("Syntax error at EOF")
         sys.exit(1)
@@ -427,6 +433,11 @@ class DatcomParser(Parser):
         statement : AIRFOIL
         """
         self.cases[-1]['AIRFOIL'] = p[1]
+
+    def p_trim(self, p):
+        """
+        statement : TRIM
+        """
 
     def p_dim(self, p):
         """
@@ -465,7 +476,7 @@ class DatcomParser(Parser):
         p[0] = p[1]
         for key in p[3].keys():
             if key in p[0]:
-                raise KeyError('duplicate key %s' % key)
+                print 'WARNING: duplicate key %s' % key
             else:
                 p[0][key] = p[3][key]
 
