@@ -361,12 +361,17 @@ class DatcomParser(Parser):
             ['CYB', 13], ['CNB', 14], ['CLB', 13]],
             p[1]['deriv_table'])
 
-    def p_syMflptable(self, p):
+    def p_symflptable(self, p):
         """
         statement : SYMFLPTABLE
         """
         self.cases[-1]['CNTRL_DERIV'] = \
-            p[1]['deriv_table']
+                self.parse_table1d(
+            [['DELTA', 12], ['D(CL)',10],
+             ['D(CM)',11], ['D(CL MAX)',10],
+             ['D(CD MIN)',13],['(CLA)D',25],
+             ['(CH)A',12],['(CH)D',11]],
+             p[1]['deriv_table'])
         self.cases[-1]['CNTRL_DRAG'] = \
             p[1]['drag_table']
         self.cases[-1]['CNTRL_DEFLECT'] = \
@@ -379,7 +384,10 @@ class DatcomParser(Parser):
         self.cases[-1]['CNTRL_YAW'] = \
             p[1]['yaw_table']
         self.cases[-1]['CNTRL_ROLL'] = \
-            p[1]['roll_table']
+                self.parse_table1d(
+           [['DELTAL',51], ['DELTAR', 16],
+            ['CL(ROLL)', 22]],
+            p[1]['roll_table'])
         self.cases[-1]['CNTRL_DEFLECT'] = \
             p[1]['deflection']
 
