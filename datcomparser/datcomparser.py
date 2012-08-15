@@ -391,7 +391,7 @@ class DatcomParser(Parser):
         (data['ALPHA'],
          data['CD']) = \
                 self.parse_table2d(9,
-            [16,10,10,10,10,10,10,10,10,10],
+            [16,10,10,10,10,10,10,10,10],
             p[1]['drag_table'])
         data['DELTA'] = \
             self.parse_vector(p[1]['deflection'])
@@ -444,6 +444,7 @@ class DatcomParser(Parser):
                     val = float(col)
                     #print 'float: %11f\n' % val
                 dataArray[-1].append(val)
+                colLastOld = colLast
         
         return (rows, dataArray) 
 

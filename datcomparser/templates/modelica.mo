@@ -41,7 +41,6 @@ package {{name}}
 
     // drag
     CD_Basic  = {{ print_table1d(CD_Basic,alpha) }},
-    // TODO  correct 2d printing
     dCD_Flap  = {{ print_table2d(dCD_Flap,alpha,flap) }},
     dCD_Elevator  = {{ print_table2d(dCD_Elevator,alpha,elev) }},
 

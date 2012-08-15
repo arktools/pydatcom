@@ -14,4 +14,5 @@ class Test(unittest.TestCase):
         for case in parser.get_cases():
             print 'case: %s\n%s\n' % (case['ID'],case.keys())
         exporter =  DatcomExporter(parser.get_cases(), 'modelica.mo')
-        print exporter.get_export()
+        result = exporter.get_export()
+        print result
