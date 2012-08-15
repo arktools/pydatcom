@@ -28,18 +28,18 @@ package {{name}}
 
     // lift
     CL_Basic = {{ print_table1d(CL_Basic,alpha) }},
-    dCL_Flap  = {{ print_table2d(dCL_Flap,alpha,flap) }},
-{#
-    dCL_Elevator  = {{dCL_Elevator}},
-    dCL_PitchRate  = {{dCL_PitchRate}},
-    dCL_AlphaDot  = {{dCL_AlphaDot}},
+    dCL_Flap  = {{ print_table1d(dCL_Flap,flap) }},
+    dCL_Elevator  = {{ print_table1d(dCL_Elevator,elev) }},
+    // TODO check dCL_PitchRate = {{ print_table1d(dCL_PitchRate,alpha) }},
+    dCL_AlphaDot  = {{ print_table1d(dCL_AlphaDot,alpha) }},
 
     // drag
-    CD_Basic  = {{CD_Basic}},
-    dCD_Flap  = {{dCD_Flap}},
-    dCD_Elevator  = {{dCD_Elevator}},
+    CD_Basic  = {{ print_table1d(CD_Basic,alpha) }},
+    dCD_Flap  = {{ print_table2d(dCD_Flap,alpha,flap) }},
+    dCD_Elevator  = {{ print_table2d(dCD_Elevator,alpha,elev) }},
 
     // side force
+{#
     dCY_Beta  = {{dCY_Beta}},
     dCY_RollRate  = {{dCY_RollRate}},
 

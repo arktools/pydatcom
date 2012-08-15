@@ -14,9 +14,9 @@ class Parser(object):
     tokens = ()
     precedence = ()
 
-    def __init__(self,kw={}):
-        self.debug = kw.get('debug', 0)
-        self.file_name = kw.get('file_name', None)
+    def __init__(self,args):
+        self.debug = args.get('debug', 0)
+        self.file_name = args.get('file_name', None)
         self.cases = []
         try:
             modname = os.path.split(os.path.splitext(__file__)[0])[1] + "_" + self.__class__.__name__
@@ -371,39 +371,42 @@ class DatcomParser(Parser):
         """
         statement : SYMFLPTABLE
         """
-        self.cases[-1]['CNTRL_DERIV'] = \
+        data = {}
+        data['DERIV'] = \
                 self.parse_table1d(
             [['DELTA', 12], ['D(CL)',10],
              ['D(CM)',11], ['D(CL MAX)',10],
              ['D(CD MIN)',13],['(CLA)D',25],
              ['(CH)A',12],['(CH)D',11]],
              p[1]['deriv_table'])
-        (self.cases[-1]['CNTRL_DRAG_ALPHA'],
-         self.cases[-1]['CNTRL_DRAG']) = \
+        (data['ALPHA'],
+         data['CD']) = \
                 self.parse_table2d(9,
             [16,10,10,10,10,10,10,10,10,10],
             p[1]['drag_table'])
-        self.cases[-1]['SYMFLP_DEFLECT'] = \
+        data['DELTA'] = \
             self.parse_vector(p[1]['deflection'])
-        #print self.cases[-1]['CNTRL_DEFLECT']
+        #print data['CNTRL_DEFLECT']
         #print self.cases[-1]['CNTRL_DRAG']
+        self.cases[-1]['SYMFLP']=data
 
     def p_asymflptable(self, p):
         """
         statement : ASYFLPTABLE
         """
-        (self.cases[-1]['CNTRL_DRAG_ALPHA'],
-         self.cases[-1]['CNTRL_YAW']) = \
+        (data['ALPHA'],
+         data['CN']) = \
                 self.parse_table2d(7,
             [18,12,12,12,12,12,12,12,12],
             p[1]['yaw_table'])
-        self.cases[-1]['CNTRL_ROLL'] = \
+        data['CL'] = \
                 self.parse_table1d(
            [['DELTAL',51], ['DELTAR', 16],
             ['CL(ROLL)', 22]],
             p[1]['roll_table'])
-        self.cases[-1]['ASYFLP_DEFLECT'] = \
+        data['DELTA'] = \
             self.parse_vector(p[1]['deflection'])
+        self.cases[-1]['ASYFLP']=data
 
     def parse_table2d(self,rowWidth,
                       colWidths,data):
@@ -525,14 +528,73 @@ class DatcomParser(Parser):
         p[0] = {p[1] : p[6]}
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        parser = DatcomParser()
-    else:
-        parser = DatcomParser({
-            'file_name':sys.argv[1]
-            })
+
+    import argparse
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("datcom_file",help="the output file from datcom to parse")
+    argparser.add_argument("-t", "--template", help="use a jinja2 template for generation")
+    args = argparser.parse_args()
+
+    parser = DatcomParser({
+        'file_name' : args.datcom_file,
+    })
+
     print '\ncases:'
     for case in parser.cases:
         print '\n', case.get('ID','UNKNOWN'), '\n', case.keys()
-        if 'STATIC' in case.keys():
-            print 'CL:', case['STATIC']['CL']
+
+    if args.template:
+        from jinja2 import Environment, PackageLoader
+        import re
+        env = Environment(
+            loader=PackageLoader(
+                'datcomparser',
+                'templates'))
+        template = env.get_template(args.template)
+        if len(parser.cases) != 3:
+            raise IOError('parser must generate 3 cases for termplate, flap, aileron, total')
+
+
+        # find cases
+        re_aileron = re.compile('.*aileron.*',re.I)
+        re_flap = re.compile('.*flap.*',re.I)
+        re_total = re.compile('.*total.*',re.I)
+        cases = {}
+        for case in parser.cases:
+            name = case['ID']
+            if re_aileron.match(name):
+                cases['aileron'] = case
+            elif re_flap.match(name):
+                cases['flap'] = case
+            elif re_total.match(name):
+                cases['total'] = case
+        for key in ['aileron', 'flap', 'total']:
+            if not key in cases:
+                raise IOError('%s case not found' %s)
+
+        # extract some need dictionaries
+        dFlap = cases['total']['SYMFLP']
+        dAileron = cases['aileron']['ASYFLP']
+        dElevator = cases['total']['SYMFLP']
+        dDynamic = cases['total']['DYNAMIC']
+        dStatic = cases['total']['STATIC']
+
+        # fill template dict
+        template_dict = {
+          'name': 'test',
+          'CL_Basic' : dStatic['CL'],
+          'dCL_Flap' : dFlap['DERIV']['D(CL)'],
+          'dCL_Elevator' : dElevator['DERIV']['D(CL)'],
+          'dCL_PitchRate' : dDynamic['CLQ'],
+          'dCL_AlphaDot' : dDynamic['CLAD'],
+          'CD_Basic' : dStatic['CD'],
+          'dCD_Flap' : dFlap['CD'],
+          'dCD_Elevator' : dElevator['CD'],
+          'flap' : dFlap['DELTA'],
+          'elev' : dElevator['DELTA'],
+          'alpha' :dStatic['ALPHA'],
+        }
+
+        # render template
+        print 'template:\n', template.render(
+            template_dict)
