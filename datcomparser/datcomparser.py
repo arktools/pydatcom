@@ -548,7 +548,7 @@ if __name__ == '__main__':
         from jinja2 import Environment, PackageLoader
         import re
         env = Environment(
-            loader=PackageLoader('datcomparser'))
+            loader=PackageLoader('datcomparser','templates'))
         template = env.get_template(args.template)
         if len(parser.cases) != 3:
             raise IOError('parser must generate 3 cases for termplate, flap, aileron, total')
