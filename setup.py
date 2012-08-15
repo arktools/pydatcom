@@ -18,8 +18,10 @@ setup(
     author='James Goppert',
     author_email='james.goppert@gmail.com',
     url='http://github.com/arktools/datcomparser',
-    packages=find_packages(),
-    scripts=['datcomparser/datcomparser.py'],
+    packages=['datcomparser'],
+    package_dir={'datcomparser': 'datcomparser'},
+    package_data= {'datcomparser' : ['templates/*']},
+    scripts=['scripts/datcomparser.py'],
     requires=['argparse','jinja2','ply'],
     test_suite='nose.collector',
     tests_require=['nose']

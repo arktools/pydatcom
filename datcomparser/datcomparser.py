@@ -619,32 +619,35 @@ class DatcomExporter(object):
     def get_export(self):
         return self.export
 
+    @staticmethod
+    def command_line():
+        import argparse
+
+        argparser = argparse.ArgumentParser()
+        argparser.add_argument("datcom_file",help="the output file from datcom to parse")
+        argparser.add_argument("-t", "--template", help="use a jinja2 template for generation (e.g. modelica.mo)")
+        argparser.add_argument("-o", "--out", help="name of file generated from template")
+        args = argparser.parse_args()
+
+        parser = DatcomParser(args.datcom_file)
+        if args.template:
+            if args.out:
+                name = os.path.splitext(args.out)[0]
+            else:
+                name = 'name'
+            exporter =  DatcomExporter(
+                parser_cases = parser.get_cases(),
+                template_file = args.template,
+                model_name = name)
+            result = exporter.get_export()
+            if args.out:
+                with open(args.out,'w') as f:
+                    f.write(result)
+            else:
+                print result
+        else:
+            for case in parser.get_cases():
+                print 'case: %s\n%s\n' % (case['ID'],case.keys())
+
 if __name__ == "__main__":
-
-    import argparse
-
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument("datcom_file",help="the output file from datcom to parse")
-    argparser.add_argument("-t", "--template", help="use a jinja2 template for generation (e.g. modelica.mo)")
-    argparser.add_argument("-o", "--out", help="name of file generated from template")
-    args = argparser.parse_args()
-
-    parser = DatcomParser(args.datcom_file)
-    if args.template:
-        if args.out:
-            name = os.path.splitext(args.out)[0]
-        else:
-            name = 'name'
-        exporter =  DatcomExporter(
-            parser_cases = parser.get_cases(),
-            template_file = args.template,
-            model_name = name)
-        result = exporter.get_export()
-        if args.out:
-            with open(args.out,'w') as f:
-                f.write(result)
-        else:
-            print result
-    else:
-        for case in parser.get_cases():
-            print 'case: %s\n%s\n' % (case['ID'],case.keys())
+    DatcomExporter.command_line()
