@@ -49,7 +49,7 @@ class Parser(object):
 class DatcomParser(Parser):
 
     re_float = r'(\+|-)?((\d*\.\d+)|(\d+\.))(E(\+|-)?\d+)?'
-    re_float_vector = r'{f}([\n\s]*(,[\n\s]*{f})*)*'.format(f=re_float)
+    re_float_vector = r'{f}([\n\s]*(,[\n\s]*{f})+)+'.format(f=re_float)
 
     states = (
         ('CASE','exclusive'),
@@ -92,6 +92,7 @@ class DatcomParser(Parser):
         'STATICTABLE',
         'ASYFLPTABLE',
         'SYMFLPTABLE',
+        'FLOAT',
         'FLOATVECTOR',
         'INTEGER',
         'EQUALS',
@@ -243,6 +244,16 @@ class DatcomParser(Parser):
             for num in string.split(t.value,','):
                 vector.append(float(num)) 
             t.value = vector
+        except ValueError:
+            p_error(t)
+            t.value = 0
+        #print t
+        return t
+
+    @TOKEN(re_float)
+    def t_INPUT_FLOAT(self, t):
+        try:
+            t.value = float(t.value)
         except ValueError:
             p_error(t)
             t.value = 0
@@ -412,7 +423,7 @@ class DatcomParser(Parser):
 
     def p_float_term(self, p):
         """
-        term : NAME EQUALS FLOATVECTOR
+        term : NAME EQUALS FLOAT
         """
         p[0] = {p[1] : p[3]}
         #print 'term'
@@ -482,7 +493,8 @@ class DatcomParser(Parser):
 
     def p_array_term(self, p):
         """
-        term : NAME LPAREN INTEGER RPAREN EQUALS FLOATVECTOR 
+        term : NAME LPAREN INTEGER RPAREN EQUALS FLOATVECTOR
+        | NAME LPAREN INTEGER RPAREN EQUALS FLOAT
         """
         p[0] = {p[1] : p[6]}
 
