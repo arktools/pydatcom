@@ -534,7 +534,10 @@ class DatcomParser(Parser):
 
 class DatcomExporter(object):
 
-    def __init__(self,parser_cases,template_file=None):
+    def __init__(self,
+            parser_cases,
+            template_file=None,
+            model_name='name'):
 
         env = Environment(
             loader=PackageLoader('datcomparser','templates'),
@@ -567,7 +570,7 @@ class DatcomExporter(object):
 
         # fill template dict
         template_dict = {
-          'name': 'test',
+          'name': model_name,
           # lift
           'CL_Basic' : dStatic['CL'],
           'dCL_Flap' : dFlap['DERIV']['D(CL)'],
@@ -628,7 +631,14 @@ if __name__ == "__main__":
 
     parser = DatcomParser(args.datcom_file)
     if args.template:
-        exporter =  DatcomExporter(parser.get_cases(), args.template)
+        if args.out:
+            name = os.path.splitext(args.out)[0]
+        else:
+            name = 'name'
+        exporter =  DatcomExporter(
+            parser_cases = parser.get_cases(),
+            template_file = args.template,
+            model_name = name)
         result = exporter.get_export()
         if args.out:
             with open(args.out,'w') as f:
