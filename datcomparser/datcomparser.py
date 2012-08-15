@@ -14,9 +14,9 @@ class Parser(object):
     tokens = ()
     precedence = ()
 
-    def __init__(self,args):
+    def __init__(self,file_name=None):
         self.debug = args.get('debug', 0)
-        self.file_name = args.get('file_name', None)
+        self.file_name = file_name
         self.cases = []
         try:
             modname = os.path.split(os.path.splitext(__file__)[0])[1] + "_" + self.__class__.__name__
@@ -36,7 +36,7 @@ class Parser(object):
         if self.file_name==None:
            while 1:
                 try:
-                    s = raw_input('datcom > ')
+                    s = raw_input('> ')
                 except EOFError:
                     break
                 if not s: continue     
@@ -45,8 +45,11 @@ class Parser(object):
             with open(self.file_name) as f:
                 file_data = f.read();
             yacc.parse(file_data)
-     
+
 class DatcomParser(Parser):
+    """
+    Parses a datcom output file.
+    """
 
     re_float = r'(\+|-)?((\d*\.\d+)|(\d+\.))(E(\+|-)?\d+)?'
     re_float_vector = r'{f}([\n\s]*(,[\n\s]*{f})+)+'.format(f=re_float)
@@ -115,6 +118,9 @@ class DatcomParser(Parser):
     t_INPUT_EQUALS  = r'='
 
     t_INPUT_ignore = ' \r\n\t'
+
+    def get_cases(self):
+        return self.cases
 
     def t_INPUT_BOOL(self, t):
         r'(\.TRUE\.|\.FALSE\.)'
@@ -528,30 +534,22 @@ class DatcomParser(Parser):
         """
         p[0] = {p[1] : p[6]}
 
-if __name__ == '__main__':
+class DatcomExporter(object):
 
-    import argparse
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument("datcom_file",help="the output file from datcom to parse")
-    argparser.add_argument("-t", "--template", help="use a jinja2 template for generation")
-    args = argparser.parse_args()
+    def __init__(self,cases,template=None):
 
-    parser = DatcomParser({
-        'file_name' : args.datcom_file,
-    })
-
-    if not args.template:
-        print '\ncases:'
-        for case in parser.cases:
-            print '\n', case.get('ID','UNKNOWN'), '\n', case.keys()
-    else:
-        from jinja2 import Environment, PackageLoader
-        import re
-        env = Environment(
-            loader=PackageLoader('datcomparser','templates'))
-        template = env.get_template(args.template)
-        if len(parser.cases) != 3:
-            raise IOError('parser must generate 3 cases for termplate, flap, aileron, total')
+        if not template:
+            print '\ncases:'
+            for case in cases:
+                print '\n', case.get('ID','UNKNOWN'), '\n', case.keys()
+        else:
+            from jinja2 import Environment, PackageLoader
+            import re
+            env = Environment(
+                loader=PackageLoader('datcomparser','templates'))
+            template = env.get_template(template)
+            if len(cases) != 3:
+                raise IOError('parser must generate 3 cases for termplate, flap, aileron, total')
 
 
         # find cases
@@ -624,4 +622,20 @@ if __name__ == '__main__':
         }
 
         # render template
-        print template.render(template_dict)
+        self.export = template.render(template_dict)
+
+    def get_export(self):
+        return self.export
+
+if __name__ == "__main__":
+
+    import argparse
+
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("datcom_file",help="the output file from datcom to parse")
+    argparser.add_argument("-t", "--template", help="use a jinja2 template for generation")
+    args = argparser.parse_args()
+
+    parser = DatcomParser(args.datcom_file)
+    exporter =  DatcomParser(parser.get_cases(), args.template)
+    print exporter.get_export()
