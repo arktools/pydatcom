@@ -173,7 +173,7 @@ class DatcomParser(Parser):
         return t
 
     def t_CASE_ASYFLPTABLE(self, t):
-        r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL\ DEVICES.*\n(?P<config>.*)\n(?P<case>.*)\n(.*\n){1}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){1}.*(DELTAL-DELTAR)=(?P<deflection>.*)\n(.*\n){2}(?P<yaw_table>([^0].*\n)+)(.*\n){3}(?P<roll_table>([^1].*\n)+)'  
+        r'CHARACTERISTICS\ OF\ HIGH\ LIFT\ AND\ CONTROL\ DEVICES.*\n(?P<config>.*)\n(?P<case>.*)\n(.*\n){1}(?P<condition_headers>(.*\n){2})(?P<condition_units>.*)\n(?P<conditions>.*)\n(.*\n){1}.*\(DELTAL-DELTAR\)=(?P<deflection>.*)\n(.*\n){2}(?P<yaw_table>([^0].*\n)+)(.*\n){3}(?P<roll_table>([^1].*\n)+)'  
         match = t.lexer.lexmatch
         t.value = {
             'deflection' : match.group('deflection'),
@@ -394,12 +394,13 @@ class DatcomParser(Parser):
         """
         statement : ASYFLPTABLE
         """
+        data = {}
         (data['ALPHA'],
          data['CN']) = \
                 self.parse_table2d(7,
             [18,12,12,12,12,12,12,12,12],
             p[1]['yaw_table'])
-        data['CL'] = \
+        data['ROLL'] = \
                 self.parse_table1d(
            [['DELTAL',51], ['DELTAR', 16],
             ['CL(ROLL)', 22]],
@@ -547,9 +548,7 @@ if __name__ == '__main__':
         from jinja2 import Environment, PackageLoader
         import re
         env = Environment(
-            loader=PackageLoader(
-                'datcomparser',
-                'templates'))
+            loader=PackageLoader('datcomparser'))
         template = env.get_template(args.template)
         if len(parser.cases) != 3:
             raise IOError('parser must generate 3 cases for termplate, flap, aileron, total')
@@ -579,18 +578,49 @@ if __name__ == '__main__':
         dDynamic = cases['total']['DYNAMIC']
         dStatic = cases['total']['STATIC']
 
+        print 'aileron key:', dAileron.keys()
+
         # fill template dict
         template_dict = {
           'name': 'test',
+          # lift
           'CL_Basic' : dStatic['CL'],
           'dCL_Flap' : dFlap['DERIV']['D(CL)'],
           'dCL_Elevator' : dElevator['DERIV']['D(CL)'],
           'dCL_PitchRate' : dDynamic['CLQ'],
           'dCL_AlphaDot' : dDynamic['CLAD'],
+
+          # drag
           'CD_Basic' : dStatic['CD'],
           'dCD_Flap' : dFlap['CD'],
           'dCD_Elevator' : dElevator['CD'],
+
+          # side force
+          'dCY_Beta' : dStatic['CYB'],
+          'dCY_RollRate' : dDynamic['CYP'],
+          
+          # roll moment
+          'dCl_Aileron' : dAileron['ROLL']['CL(ROLL)'],
+          'dCl_Beta' : dStatic['CLB'],
+          'dCl_RollRate' : dDynamic['CLP'],
+          'dCl_YawRate' : dDynamic['CLR'],
+
+          # pitch moment
+          'Cm_Basic' : dStatic['CM'],
+          'dCm_Flap' : dFlap['DERIV']['D(CM)'],
+          'dCm_Elevator' : dElevator['DERIV']['D(CM)'],
+          'dCm_PitchRate' : dDynamic['CMQ'],
+          'dCm_AlphaDot' : dDynamic['CMAD'],
+
+          # yaw moment
+          'dCn_Aileron' : dAileron['CN'],
+          'dCn_Beta' : dStatic['CNB'],
+          'dCn_RollRate' : dDynamic['CNP'],
+          'dCn_YawRate' : dDynamic['CNR'],
+           
+          # surfaces/ wind angles
           'flap' : dFlap['DELTA'],
+          'alrn' : dAileron['DELTA'],
           'elev' : dElevator['DELTA'],
           'alpha' :dStatic['ALPHA'],
         }

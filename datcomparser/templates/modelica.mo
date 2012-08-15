@@ -30,7 +30,7 @@ package {{name}}
     CL_Basic = {{ print_table1d(CL_Basic,alpha) }},
     dCL_Flap  = {{ print_table1d(dCL_Flap,flap) }},
     dCL_Elevator  = {{ print_table1d(dCL_Elevator,elev) }},
-    // TODO check dCL_PitchRate = {{ print_table1d(dCL_PitchRate,alpha) }},
+    dCL_PitchRate = {{ print_table1d(dCL_PitchRate,alpha) }},
     dCL_AlphaDot  = {{ print_table1d(dCL_AlphaDot,alpha) }},
 
     // drag
@@ -40,25 +40,25 @@ package {{name}}
     dCD_Elevator  = {{ print_table2d(dCD_Elevator,alpha,elev) }},
 
     // side force
-{#
-    dCY_Beta  = {{dCY_Beta}},
-    dCY_RollRate  = {{dCY_RollRate}},
+    dCY_Beta  = {{ print_table1d(dCY_Beta,alpha) }},
+    dCY_RollRate  = {{ print_table1d(dCY_RollRate,alpha) }},
 
     // roll moment
-    dCl_Aileron  = {{dCL_Aileron}},
-    dCl_Beta  = {{dCL_Beta}},
-    dCl_RollRate  = {{dCL_RollRate}},
-    dCl_YawRate  = {{dCL_YawRate}},
+    dCl_Aileron  = {{ print_table1d(dCl_Aileron,alrn) }},
+    dCl_Beta  = {{ print_table1d(dCl_Beta,alpha) }},
+    dCl_RollRate  = {{ print_table1d(dCl_RollRate,alpha) }},
+    dCl_YawRate  = {{ print_table1d(dCl_YawRate,alpha) }},
 
     // pitch moment
-    Cm_Basic = {{Cm_Basic}},
-    dCm_Flap  = {{dCm_Flap}},
-    dCm_Elevator  = {{dCm_Elevator}},
-    dCm_PitchRate  = {{dCm_PitchRate}},
-    dCm_AlphaDot  = {{dCm_AlphaDot}},
+    Cm_Basic = {{ print_table1d(Cm_Basic,alpha) }},
+    dCm_Flap  = {{ print_table1d(dCm_Flap,flap) }},
+    dCm_Elevator  = {{ print_table1d(dCm_Elevator,elev) }},
+    dCm_PitchRate  = {{ print_table1d(dCm_PitchRate,alpha) }},
+    dCm_AlphaDot  = {{ print_table1d(dCm_AlphaDot,alpha) }},
 
     // yaw moment
-    dCn_Aileron  = {{dCn_Aileron}},
+    dCn_Aileron  = {{ print_table2d(dCn_Aileron,alpha,alrn) }},
+{#
     dCn_Beta  = {{dCn_Beta}},
     dCn_RollRate  = {{dCn_RollRate}},
     dCn_YawRate  = {{dCn_YawRate}};
