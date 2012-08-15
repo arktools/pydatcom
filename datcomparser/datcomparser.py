@@ -354,7 +354,7 @@ class DatcomParser(Parser):
         """
         self.cases[-1]['DYNAMIC'] = self.parse_table1d(
             [['ALPHA', 10], ['CLQ', 13], ['CMQ', 13],
-            ['CLAD', 13], ['CMAD', 13], ['CLP', 14],
+            ['CLAD', 15], ['CMAD', 13], ['CLP', 14],
             ['CYP', 13], ['CNP', 13], ['CNR', 13],
             ['CLR', 14]],
             p[1]['deriv_table'])
@@ -385,7 +385,7 @@ class DatcomParser(Parser):
         (data['ALPHA'],
          data['CD']) = \
                 self.parse_table2d(9,
-            [16,10,10,10,10,10,10,10,10],
+            [15,10,10,10,10,10,10,10,10],
             p[1]['drag_table'])
         data['DELTA'] = \
             self.parse_vector(p[1]['deflection'])
@@ -559,7 +559,7 @@ class DatcomExporter(object):
                 raise IOError('%s case not found' % key)
 
         # extract some need dictionaries
-        dFlap = cases['total']['SYMFLP']
+        dFlap = cases['flap']['SYMFLP']
         dAileron = cases['aileron']['ASYFLP']
         dElevator = cases['total']['SYMFLP']
         dDynamic = cases['total']['DYNAMIC']
@@ -622,13 +622,19 @@ if __name__ == "__main__":
 
     argparser = argparse.ArgumentParser()
     argparser.add_argument("datcom_file",help="the output file from datcom to parse")
-    argparser.add_argument("-t", "--template", help="use a jinja2 template for generation")
+    argparser.add_argument("-t", "--template", help="use a jinja2 template for generation (e.g. modelica.mo)")
+    argparser.add_argument("-o", "--out", help="name of file generated from template")
     args = argparser.parse_args()
 
     parser = DatcomParser(args.datcom_file)
     if args.template:
         exporter =  DatcomExporter(parser.get_cases(), args.template)
-        print exporter.get_export()
+        result = exporter.get_export()
+        if args.out:
+            with open(args.out,'w') as f:
+                f.write(result)
+        else:
+            print result
     else:
         for case in parser.get_cases():
             print 'case: %s\n%s\n' % (case['ID'],case.keys())
