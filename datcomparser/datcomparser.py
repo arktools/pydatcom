@@ -336,20 +336,14 @@ class DatcomParser(Parser):
             for j in xrange(len(lines)-1): # TODO why -1
                 line = lines[j]
                 col = line[colLastOld+1:colLast].strip()
-                if col == '':
-                    val = 0
-                elif col == 'NDM':
-                    val = 'NDM'                    
-                elif col == 'NA':
-                    val = 'NA'
+                if col == '' or  \
+                        col == 'NDM' or \
+                        col =='NA':
+                    pass
                 else:
                     #print 'raw: %11s' % col
-                    try:
-                        val = float(col)
-                    except ValueError:
-                        print 'could not cast "%s" to float' % col
+                    valList.append(float(col))
                     #print 'float: %11f\n' % val
-                valList.append(val)
             table[cols[i][0]] = valList
             colLastOld = colLast
         return  table
