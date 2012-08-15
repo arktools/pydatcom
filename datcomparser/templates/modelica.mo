@@ -58,12 +58,10 @@ package {{name}}
 
     // yaw moment
     dCn_Aileron  = {{ print_table2d(dCn_Aileron,alpha,alrn) }},
-{#
-    dCn_Beta  = {{dCn_Beta}},
-    dCn_RollRate  = {{dCn_RollRate}},
-    dCn_YawRate  = {{dCn_YawRate}};
+    dCn_Beta  = {{ print_table1d(dCn_Beta,alpha) }},
+    dCn_RollRate  = {{ print_table1d(dCn_RollRate,alpha) }},
+    dCn_YawRate  = {{ print_table1d(dCn_YawRate,alpha) }};
 
-#}
 end {{name}};
 
 // vim:ts=2:sw=2:expandtab
