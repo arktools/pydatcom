@@ -29,11 +29,12 @@ class Parser(object):
         #print self.debugfile, self.tabmodule
 
         # Build the lexer and parser
-        self.lex = lex.lex(module=self, debug=self.debug)
+        self.lex = lex.lex(module=self,
+            debug=self.debug)
         self.yacc = yacc.yacc(module=self,
-                  debug=self.debug,
-                  debugfile=self.debugfile,
-                  tabmodule=self.tabmodule)
+            debug=self.debug,
+            debugfile=self.debugfile,
+            tabmodule=self.tabmodule)
 
         if self.file_name==None:
            while 1:
