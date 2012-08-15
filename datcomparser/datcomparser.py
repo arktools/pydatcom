@@ -333,7 +333,7 @@ class DatcomParser(Parser):
         for i in xrange(len(cols)):
             colLast = colLastOld+cols[i][1]
             valList = []
-            for j in xrange(len(lines)-1): # TODO why -1
+            for j in xrange(len(lines)-1): # -1 to skip last newline 
                 line = lines[j]
                 col = line[colLastOld+1:colLast].strip()
                 if col == '' or  \
@@ -419,7 +419,7 @@ class DatcomParser(Parser):
         rows = []
         lines = data.split('\n')
 
-        for i in xrange(len(lines)-1): # TODO why -1
+        for i in xrange(len(lines)-1): # -1 to skip last newline
             line = lines[i]
             rows.append(float(line[0:rowWidth-1]))
             colLastOld = rowWidth
