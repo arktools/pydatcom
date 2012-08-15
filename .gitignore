@@ -7,5 +7,6 @@
 *.dat
 *_parsetab.py
 build/
+dist/
 *.egg-info/
 *.mo
