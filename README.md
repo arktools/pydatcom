@@ -6,5 +6,7 @@
 * jinja templates
 
 ## Example Usage
+```bash
 cd datcomparser
 ./datcomparser.py output/Citation.out -t modelica.mo
+```
