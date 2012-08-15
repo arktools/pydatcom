@@ -1,5 +1,5 @@
 # datcomparser
-* Converts DATCOM output files to various formats
+* Parses and converts DATCOM output files to various formats using Jinja templates.
 
 ## Dependencies
 * ply (python lex/yacc)

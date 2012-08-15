@@ -6,4 +6,6 @@
 *.xml
 *.dat
 *_parsetab.py
-
+build/
+*.egg-info/
+*.mo
