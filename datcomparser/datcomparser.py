@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
 import sys
+import os
+import string
+import re
+from jinja2 import Environment, PackageLoader
 import ply.yacc as yacc
 import ply.lex as lex
 from ply.lex import TOKEN
-import os
-import string
 
 class Parser(object):
     """
@@ -14,8 +16,8 @@ class Parser(object):
     tokens = ()
     precedence = ()
 
-    def __init__(self,file_name=None):
-        self.debug = args.get('debug', 0)
+    def __init__(self,file_name=None,debug=0):
+        self.debug = debug
         self.file_name = file_name
         self.cases = []
         try:
@@ -536,28 +538,18 @@ class DatcomParser(Parser):
 
 class DatcomExporter(object):
 
-    def __init__(self,cases,template=None):
+    def __init__(self,parser_cases,template_file=None):
 
-        if not template:
-            print '\ncases:'
-            for case in cases:
-                print '\n', case.get('ID','UNKNOWN'), '\n', case.keys()
-        else:
-            from jinja2 import Environment, PackageLoader
-            import re
-            env = Environment(
-                loader=PackageLoader('datcomparser','templates'))
-            template = env.get_template(template)
-            if len(cases) != 3:
-                raise IOError('parser must generate 3 cases for termplate, flap, aileron, total')
-
+        env = Environment(
+            loader=PackageLoader('datcomparser','templates'))
+        template = env.get_template(template_file)
 
         # find cases
         re_aileron = re.compile('.*aileron.*',re.I)
         re_flap = re.compile('.*flap.*',re.I)
         re_total = re.compile('.*total.*',re.I)
         cases = {}
-        for case in parser.cases:
+        for case in parser_cases:
             name = case['ID']
             if re_aileron.match(name):
                 cases['aileron'] = case
@@ -566,8 +558,8 @@ class DatcomExporter(object):
             elif re_total.match(name):
                 cases['total'] = case
         for key in ['aileron', 'flap', 'total']:
-            if not key in cases:
-                raise IOError('%s case not found' %s)
+            if key not in cases:
+                raise IOError('%s case not found' % key)
 
         # extract some need dictionaries
         dFlap = cases['total']['SYMFLP']
@@ -637,5 +629,9 @@ if __name__ == "__main__":
     args = argparser.parse_args()
 
     parser = DatcomParser(args.datcom_file)
-    exporter =  DatcomParser(parser.get_cases(), args.template)
-    print exporter.get_export()
+    if args.template:
+        exporter =  DatcomExporter(parser.get_cases(), args.template)
+        print exporter.get_export()
+    else:
+        for case in parser.get_cases():
+            print 'case: %s\n%s\n' % (case['ID'],case.keys())
