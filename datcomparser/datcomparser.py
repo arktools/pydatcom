@@ -149,7 +149,7 @@ class DatcomParser(Parser):
         t.value = {
             'deriv_table' : match.group('deriv_table'),
         }
-        print 'dynamic table'
+        #print 'dynamic table'
         return t
 
     def t_CASE_STATICTABLE(self, t):
@@ -158,7 +158,7 @@ class DatcomParser(Parser):
         t.value = {
             'deriv_table' : match.group('deriv_table'),
         }
-        print 'static table'
+        #print 'static table'
         return t
 
     def t_CASE_SYMFLPTABLE(self, t):
@@ -169,7 +169,7 @@ class DatcomParser(Parser):
             'deflection' : match.group('deflection'),
             'drag_table' : match.group('drag_table'),
         }
-        print 'symflp table'
+        #print 'symflp table'
         return t
 
     def t_CASE_ASYFLPTABLE(self, t):
@@ -180,7 +180,7 @@ class DatcomParser(Parser):
             'yaw_table' : match.group('yaw_table'),
             'roll_table' : match.group('roll_table'),
         }
-        print 'asyflp table'
+        #print 'asyflp table'
         return t
 
     def t_INPUT_COMMA(self, t):
@@ -225,7 +225,7 @@ class DatcomParser(Parser):
         r'.*CASEID (?P<name>.*)'
         t.value = t.lexer.lexmatch.group('name').strip()
         t.num = len(self.cases)
-        print '\ncase:', t.value
+        #print '\ncase:', t.value
         return t
 
     def t_INPUT_NAME(self, t):
@@ -540,11 +540,11 @@ if __name__ == '__main__':
         'file_name' : args.datcom_file,
     })
 
-    print '\ncases:'
-    for case in parser.cases:
-        print '\n', case.get('ID','UNKNOWN'), '\n', case.keys()
-
-    if args.template:
+    if not args.template:
+        print '\ncases:'
+        for case in parser.cases:
+            print '\n', case.get('ID','UNKNOWN'), '\n', case.keys()
+    else:
         from jinja2 import Environment, PackageLoader
         import re
         env = Environment(
@@ -577,8 +577,6 @@ if __name__ == '__main__':
         dElevator = cases['total']['SYMFLP']
         dDynamic = cases['total']['DYNAMIC']
         dStatic = cases['total']['STATIC']
-
-        print 'aileron key:', dAileron.keys()
 
         # fill template dict
         template_dict = {
@@ -626,5 +624,4 @@ if __name__ == '__main__':
         }
 
         # render template
-        print 'template:\n', template.render(
-            template_dict)
+        print template.render(template_dict)
