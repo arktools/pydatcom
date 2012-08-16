@@ -8,5 +8,7 @@
 *_parsetab.py
 build/
 dist/
+DatcomParser-*/
+deb_dist/
 *.egg-info/
 *.mo
