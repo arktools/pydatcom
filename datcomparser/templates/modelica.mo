@@ -1,7 +1,7 @@
 # macro print_table1d(table,x,indent='      ')
   {
   #- for row in table
-      {{'\n'}}{{indent}}{{- "%4g,%10g"|format(x[loop.index0],row) -}}
+      {{'\n'}}{{indent}}{{- "{%4g,%10g}"|format(x[loop.index0],row) -}}
     {%- if not loop.last -%},{%- endif %}
   #- endfor
 }
@@ -30,7 +30,7 @@
 
 package {{name}}
 
-  constant OpenFDM.Aerodynamics.Datcom.Table datcomTables(    
+  constant OpenFDM.Aerodynamics.Datcom.Tables datcomTables(    
 
     // lift
     CL_Basic = {{ print_table1d(CL_Basic,alpha) }},
@@ -65,7 +65,7 @@ package {{name}}
     dCn_Aileron  = {{ print_table2d(dCn_Aileron,alpha,alrn) }},
     dCn_Beta  = {{ print_table1d(dCn_Beta,alpha) }},
     dCn_RollRate  = {{ print_table1d(dCn_RollRate,alpha) }},
-    dCn_YawRate  = {{ print_table1d(dCn_YawRate,alpha) }},
+    dCn_YawRate  = {{ print_table1d(dCn_YawRate,alpha) }}
   );
 end {{name}};
 

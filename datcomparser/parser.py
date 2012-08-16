@@ -58,8 +58,55 @@ class DatcomParser(Parser):
     Parses a datcom output file.
     """
 
-    re_float = r'(\+|-)?((\d*\.\d+)|(\d+\.))(E(\+|-)?\d+)?'
-    re_float_vector = r'{f}([\n\s]*(,[\n\s]*{f})+)+'.format(f=re_float)
+    re_float = \
+        r'(\+|-)?((\d*\.\d+)|(\d+\.))(E(\+|-)?\d+)?'
+
+    re_float_vector = \
+        r'{f}([\n\s]*(,[\n\s]*{f})+)+'.format(f=re_float)
+
+    re_dynamictable = \
+        r'DYNAMIC\ DERIVATIVES\n(?P<config>.*)\n' \
+        r'(?P<case>.*)\n(.*\n){2}' \
+        r'(?P<condition_headers>(.*\n){2})' \
+        r'(?P<condition_units>.*)\n' \
+        r'(?P<conditions>.*)\n(.*\n){2}0' \
+        r'(?P<deriv_headers>.*)\n0.*\n' \
+        r'(?P<deriv_table>([^\d\n].*\n)+)'
+
+    re_statictable = \
+        r'CHARACTERISTICS\ AT\ ANGLE\ OF\ ATTACK.*\n' \
+        r'(?P<config>.*(\n.*POWER.*)?)\n' \
+        r'(?P<case>.*)\n(.*\n){2}' \
+        r'(?P<condition_headers>(.*\n){2})' \
+        r'(?P<condition_units>.*)\n' \
+        r'(?P<conditions>.*)\n(.*\n){1}0' \
+        r'(?P<deriv_headers>.*)\n0.*\n' \
+        r'(?P<deriv_table>([^\d\n].*\n)+)'
+
+    re_symflptable = \
+        r'CHARACTERISTICS\ OF\ HIGH' \
+        r'\ LIFT\ AND\ CONTROL\ DEVICES.*\n' \
+        r'(?P<config>.*)\n(?P<case>.*)\n(.*\n){1}' \
+        r'(?P<condition_headers>(.*\n){2})' \
+        r'(?P<condition_units>.*)\n' \
+        r'(?P<conditions>.*)\n(.*\n){1}' \
+        r'0(?P<deriv_headers>.*)\n(.*\n){2}' \
+        r'(?P<deriv_table>([^\d\n].*\n)+)' \
+        r'(.*\n){2}.*INDUCED\ DRAG\ COEFFICIENT' \
+        r'\ INCREMENT.*\n.*DELTA\ =' \
+        r'(?P<deflection>.*)\n(.*\n){2}' \
+        r'(?P<drag_table>([^\d\n].*\n)+)'
+
+    re_asyflptable = \
+        r'CHARACTERISTICS\ OF\ HIGH\ LIFT' \
+        r'\ AND\ CONTROL\ DEVICES.*\n' \
+        r'(?P<config>.*)\n(?P<case>.*)\n(.*\n){1}' \
+        r'(?P<condition_headers>(.*\n){2})' \
+        r'(?P<condition_units>.*)\n' \
+        r'(?P<conditions>.*)\n(.*\n){1}.*' \
+        r'\(DELTAL-DELTAR\)=(?P<deflection>.*)' \
+        r'\n(.*\n){2}(?P<yaw_table>([^0].*\n)+)' \
+        r'(.*\n){3}(?P<roll_table>([^1].*\n)+)'
 
     states = (
         ('CASE', 'exclusive'),
@@ -157,14 +204,8 @@ class DatcomParser(Parser):
         #print 'end of job'
         t.lexer.pop_state()
 
+    @TOKEN(re_dynamictable)
     def t_CASE_DYNAMICTABLE(self, t):
-        r'DYNAMIC\ DERIVATIVES\n(?P<config>.*)\n'
-        '(?P<case>.*)\n(.*\n){2}'
-        '(?P<condition_headers>(.*\n){2})'
-        '(?P<condition_units>.*)\n'
-        '(?P<conditions>.*)\n(.*\n){2}0'
-        '(?P<deriv_headers>.*)\n0.*\n'
-        '(?P<deriv_table>([^\d\n].*\n)+)'
         match = t.lexer.lexmatch
         t.value = {
             'deriv_table': match.group('deriv_table'),
@@ -172,15 +213,8 @@ class DatcomParser(Parser):
         #print 'dynamic table'
         return t
 
+    @TOKEN(re_statictable)
     def t_CASE_STATICTABLE(self, t):
-        r'CHARACTERISTICS\ AT\ ANGLE\ OF\ ATTACK.*\n'
-        '(?P<config>.*(\n.*POWER.*)?)\n'
-        '(?P<case>.*)\n(.*\n){2}'
-        '(?P<condition_headers>(.*\n){2})'
-        '(?P<condition_units>.*)\n'
-        '(?P<conditions>.*)\n(.*\n){1}0'
-        '(?P<deriv_headers>.*)\n0.*\n'
-        '(?P<deriv_table>([^\d\n].*\n)+)'
         match = t.lexer.lexmatch
         t.value = {
             'deriv_table': match.group('deriv_table'),
@@ -188,19 +222,8 @@ class DatcomParser(Parser):
         #print 'static table'
         return t
 
+    @TOKEN(re_symflptable)
     def t_CASE_SYMFLPTABLE(self, t):
-        r'CHARACTERISTICS\ OF\ HIGH'
-        '\ LIFT\ AND\ CONTROL\ DEVICES.*\n'
-        '(?P<config>.*)\n(?P<case>.*)\n(.*\n){1}'
-        '(?P<condition_headers>(.*\n){2})'
-        '(?P<condition_units>.*)\n'
-        '(?P<conditions>.*)\n(.*\n){1}'
-        '0(?P<deriv_headers>.*)\n(.*\n){2}'
-        '(?P<deriv_table>([^\d\n].*\n)+)'
-        '(.*\n){2}.*INDUCED\ DRAG\ COEFFICIENT'
-        '\ INCREMENT.*\n.*DELTA\ ='
-        '(?P<deflection>.*)\n(.*\n){2}'
-        '(?P<drag_table>([^\d\n].*\n)+)'
         match = t.lexer.lexmatch
         t.value = {
             'deriv_table': match.group('deriv_table'),
@@ -210,16 +233,8 @@ class DatcomParser(Parser):
         #print 'symflp table'
         return t
 
+    @TOKEN(re_asyflptable)
     def t_CASE_ASYFLPTABLE(self, t):
-        r'CHARACTERISTICS\ OF\ HIGH\ LIFT'
-        '\ AND\ CONTROL\ DEVICES.*\n'
-        '(?P<config>.*)\n(?P<case>.*)\n(.*\n){1}'
-        '(?P<condition_headers>(.*\n){2})'
-        '(?P<condition_units>.*)\n'
-        '(?P<conditions>.*)\n(.*\n){1}.*'
-        '\(DELTAL-DELTAR\)=(?P<deflection>.*)'
-        '\n(.*\n){2}(?P<yaw_table>([^0].*\n)+)'
-        '(.*\n){3}(?P<roll_table>([^1].*\n)+)'
         match = t.lexer.lexmatch
         t.value = {
             'deflection': match.group('deflection'),
@@ -387,9 +402,7 @@ class DatcomParser(Parser):
         return  table
 
     def p_dynamictable(self, p):
-        """
-        statement : DYNAMICTABLE
-        """
+        'statement : DYNAMICTABLE'
         self.cases[-1]['DYNAMIC'] = self.parse_table1d(
             [['ALPHA', 10], ['CLQ', 13], ['CMQ', 13],
             ['CLAD', 15], ['CMAD', 13], ['CLP', 14],
@@ -398,9 +411,7 @@ class DatcomParser(Parser):
             p[1]['deriv_table'])
 
     def p_statictable(self, p):
-        """
-        statement : STATICTABLE
-        """
+        'statement : STATICTABLE'
         self.cases[-1]['STATIC'] = self.parse_table1d(
             [['ALPHA', 8], ['CD', 9], ['CL', 9],
             ['CM', 10], ['CN', 8], ['CA', 9],
@@ -409,9 +420,7 @@ class DatcomParser(Parser):
             p[1]['deriv_table'])
 
     def p_symflptable(self, p):
-        """
-        statement : SYMFLPTABLE
-        """
+        'statement : SYMFLPTABLE'
         data = {}
         data['DERIV'] = \
                 self.parse_table1d(
@@ -432,9 +441,7 @@ class DatcomParser(Parser):
         self.cases[-1]['SYMFLP'] = data
 
     def p_asymflptable(self, p):
-        """
-        statement : ASYFLPTABLE
-        """
+        'statement : ASYFLPTABLE'
         data = {}
         (data['ALPHA'],
          data['CN']) = \
@@ -489,9 +496,7 @@ class DatcomParser(Parser):
         sys.exit(1)
 
     def p_namelist(self, p):
-        """
-        statement : NAMELIST terms ENDNAMELIST
-        """
+        'statement : NAMELIST terms ENDNAMELIST'
         self.cases[-1][p[1]] = p[2]
 
     def p_scalar_term(self, p):
@@ -503,9 +508,7 @@ class DatcomParser(Parser):
         #print 'term'
 
     def p_bool_term(self, p):
-        """
-        term : NAME EQUALS BOOL
-        """
+        'term : NAME EQUALS BOOL'
         if p[3] == ".TRUE.":
             p[0] = {p[1]: True}
         elif p[3] == ".FALSE.":
@@ -514,55 +517,37 @@ class DatcomParser(Parser):
             self.p_error(p[3])
 
     def p_airfoil(self, p):
-        """
-        statement : AIRFOIL
-        """
+        'statement : AIRFOIL'
         self.cases[-1]['AIRFOIL'] = p[1]
 
     def p_trim(self, p):
-        """
-        statement : TRIM
-        """
+        'statement : TRIM'
 
     def p_dim(self, p):
-        """
-        statement : DIM NAME
-        """
+        'statement : DIM NAME'
         self.cases[-1][p[1]] = p[2]
 
     def p_damp(self, p):
-        """
-        statement : DAMP
-        """
+        'statement : DAMP'
         self.cases[-1][p[1]] = True
 
     def p_part(self, p):
-        """
-        statement : PART
-        """
+        'statement : PART'
         self.cases[-1][p[1]] = True
 
     def p_deriv(self, p):
-        """
-        statement : DERIV NAME
-        """
+        'statement : DERIV NAME'
         self.cases[-1][p[1]] = p[2]
 
     def p_dump(self, p):
-        """
-        statement : DUMP NAME
-        """
+        'statement : DUMP NAME'
 
     def p_term_terms(self, p):
-        """
-        terms : term
-        """
+        'terms : term'
         p[0] = p[1]
 
     def p_terms(self, p):
-        """
-        terms : terms COMMA term
-        """
+        'terms : terms COMMA term'
         p[0] = p[1]
         for key in p[3].keys():
             if key in p[0]:
