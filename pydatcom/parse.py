@@ -19,6 +19,7 @@ class Parser(object):
         self.debug = debug
         self.file_name = file_name
         self.cases = []
+        self.common_dicts = []
         try:
             modname = os.path.split(
                 os.path.splitext(__file__)[0])[1] + \
@@ -172,9 +173,6 @@ class DatcomParser(Parser):
     t_INPUT_EQUALS = r'='
 
     t_INPUT_ignore = ' \r\n\t'
-
-    def get_cases(self):
-        return self.cases
 
     def t_INPUT_BOOL(self, t):
         r'(\.TRUE\.|\.FALSE\.)'
@@ -561,3 +559,88 @@ class DatcomParser(Parser):
         | NAME LPAREN INTEGER RPAREN EQUALS INTEGER
         """
         p[0] = {p[1]: p[6]}
+
+    def get_common(self):
+        """
+        get a dictionary of common information,
+        use get_cases to get more information from
+        each case
+        """
+        # find cases
+        re_aileron = re.compile('.*aileron.*', re.I)
+        re_flap = re.compile('.*flap.*', re.I)
+        re_total = re.compile('.*total.*', re.I)
+        cases = {}
+        for case in self.cases:
+            name = case['ID']
+            if re_aileron.match(name):
+                cases['aileron'] = case
+            elif re_flap.match(name):
+                cases['flap'] = case
+            elif re_total.match(name):
+                cases['total'] = case
+        for key in ['aileron', 'flap', 'total']:
+            if key not in cases:
+                raise IOError('%s case not found' % key)
+
+        # extract some need dictionaries
+        dFlap = cases['flap']['SYMFLP']
+        dAileron = cases['aileron']['ASYFLP']
+        dElevator = cases['total']['SYMFLP']
+        dDynamic = cases['total']['DYNAMIC']
+        dStatic = cases['total']['STATIC']
+
+        # create model name
+        if self.file_name == None:
+            model_name = 'name'
+        else:
+            model_name = os.path.split(os.path.splitext(self.file_name)[0])[1]
+
+        # fill dict
+        print 'model_name: ', model_name
+        return {
+          'name': model_name,
+          # lift
+          'CL_Basic': dStatic['CL'],
+          'dCL_Flap': dFlap['DERIV']['D(CL)'],
+          'dCL_Elevator': dElevator['DERIV']['D(CL)'],
+          'dCL_PitchRate': dDynamic['CLQ'],
+          'dCL_AlphaDot': dDynamic['CLAD'],
+
+          # drag
+          'CD_Basic': dStatic['CD'],
+          'dCD_Flap': dFlap['CD'],
+          'dCD_Elevator': dElevator['CD'],
+
+          # side force
+          'dCY_Beta': dStatic['CYB'],
+          'dCY_RollRate': dDynamic['CYP'],
+
+          # roll moment
+          'dCl_Aileron': dAileron['ROLL']['CL(ROLL)'],
+          'dCl_Beta': dStatic['CLB'],
+          'dCl_RollRate': dDynamic['CLP'],
+          'dCl_YawRate': dDynamic['CLR'],
+
+          # pitch moment
+          'Cm_Basic': dStatic['CM'],
+          'dCm_Flap': dFlap['DERIV']['D(CM)'],
+          'dCm_Elevator': dElevator['DERIV']['D(CM)'],
+          'dCm_PitchRate': dDynamic['CMQ'],
+          'dCm_AlphaDot': dDynamic['CMAD'],
+
+          # yaw moment
+          'dCn_Aileron': dAileron['CN'],
+          'dCn_Beta': dStatic['CNB'],
+          'dCn_RollRate': dDynamic['CNP'],
+          'dCn_YawRate': dDynamic['CNR'],
+
+          # surfaces/ wind angles
+          'flap': dFlap['DELTA'],
+          'alrn': dAileron['DELTA'],
+          'elev': dElevator['DELTA'],
+          'alpha': dStatic['ALPHA'],
+        }
+
+    def get_cases(self):
+        return self.cases

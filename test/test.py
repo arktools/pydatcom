@@ -14,6 +14,6 @@ class Test(unittest.TestCase):
         parser = DatcomParser(os.path.join('test', 'data', 'Citation.out'))
         for case in parser.get_cases():
             print 'case: %s\n%s\n' % (case['ID'], case.keys())
-        exporter = DatcomExporter(parser.get_cases(), 'modelica.mo')
+        exporter = DatcomExporter(parser.get_common(), 'modelica.mo')
         result = exporter.get_export()
         print result

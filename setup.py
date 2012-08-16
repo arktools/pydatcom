@@ -39,6 +39,6 @@ setup(name='PyDatcom',
       package_data={'pydatcom': ['templates/*']},
       entry_points={
         'console_scripts': [
-            'pydatcom-export = pydatcom.exporter:DatcomExporter.command_line'
+            'pydatcom-export = pydatcom.export:DatcomExporter.command_line'
         ]},
       )
