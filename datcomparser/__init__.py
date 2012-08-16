@@ -1,1 +1,1 @@
-from datcomparser import DatcomParser, DatcomExporter
+from parser import DatcomParser, DatcomExporter
