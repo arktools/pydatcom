@@ -8,7 +8,7 @@
 #- endmacro
 
 # macro print_table2d(table,x,y,indent='      ')
-    { {{-'\n'}}{{indent}}{ {{- "%4g"|format(9999)}},
+    { {{-'\n'}}{{indent}}{ {{- "%4g"|format(-999)}},
   #- for yI in y
     {{- "%10g"|format(yI) -}}
     {%- if not loop.last %},{% endif %}
