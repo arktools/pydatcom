@@ -597,7 +597,6 @@ class DatcomParser(Parser):
             model_name = os.path.split(os.path.splitext(self.file_name)[0])[1]
 
         # fill dict
-        print 'model_name: ', model_name
         return {
           'name': model_name,
           # lift
