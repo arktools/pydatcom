@@ -5,7 +5,7 @@ import os
 
 version = '0.1.0'
 
-setup(name='DatcomParser',
+setup(name='PyDatcom',
       version=version,
       description="A parser/exporter for DATCOM files.",
       long_description="""\
@@ -29,16 +29,16 @@ setup(name='DatcomParser',
       keywords='',
       author='James Goppert',
       author_email='james.goppert@gmail.com',
-      url='https://github.com/arktools/datcomparser',
+      url='https://github.com/arktools/pydatcom',
       license='GPLv3',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
       zip_safe=False,
       install_requires=['jinja2', 'ply'],
-      package_dir={'datcomparser': 'datcomparser'},
-      package_data={'datcomparser': ['templates/*']},
+      package_dir={'pydatcom': 'pydatcom'},
+      package_data={'pydatcom': ['templates/*']},
       entry_points={
         'console_scripts': [
-            'datcomexport = datcomparser:DatcomExporter.command_line'
+            'pydatcom-export = pydatcom.exporter:DatcomExporter.command_line'
         ]},
       )
