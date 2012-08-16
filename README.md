@@ -1,5 +1,5 @@
-# datcom
-* Parses and converts DATCOM output files to various formats using Jinja templates.
+# pydatcom
+* A python interface for DATCOM. Provides export/ parsing capabilities.
 
 ## Dependencies
 * ply (python lex/yacc)

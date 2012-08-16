@@ -7,7 +7,7 @@ version = '0.1.0'
 
 setup(name='PyDatcom',
       version=version,
-      description="A parser/exporter for DATCOM files.",
+      description="A python interface for DATCOM. Provides export/ parsing capabilities.",
       long_description="""\
       Parses DATCOM using ply and exports
       using Jinja2 for flexibility. Custom
