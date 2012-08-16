@@ -2,7 +2,7 @@
 
 import unittest
 import os
-from datcomparser import DatcomParser, DatcomExporter
+from pydatcom import DatcomParser, DatcomExporter
 
 
 class Test(unittest.TestCase):

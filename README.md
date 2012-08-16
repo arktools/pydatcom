@@ -1,4 +1,4 @@
-# datcomparser
+# datcom
 * Parses and converts DATCOM output files to various formats using Jinja templates.
 
 ## Dependencies
@@ -7,6 +7,5 @@
 
 ## Example Usage
 ```bash
-cd datcomparser
-./datcomparser.py ../test/data/Citation.out -t modelica.mo
+pydatcom-export ../test/data/Citation.out -t modelica.mo -o Citation.mo
 ```
