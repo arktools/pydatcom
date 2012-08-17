@@ -34,7 +34,7 @@ setup(name='PyDatcom',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
       zip_safe=False,
-      install_requires=['jinja2', 'ply'],
+      install_requires=['jinja2', 'ply', 'matplotlib'],
       package_dir={'pydatcom': 'pydatcom'},
       package_data={'pydatcom': ['templates/*']},
       entry_points={
