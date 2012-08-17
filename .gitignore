@@ -8,6 +8,7 @@
 *_parsetab.py
 build/
 dist/
+fig/
 DatcomParser-*/
 deb_dist/
 *.egg-info/

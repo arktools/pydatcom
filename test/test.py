@@ -21,3 +21,4 @@ class Test(unittest.TestCase):
     def test_plot(self):
         parser = DatcomParser(os.path.join('test', 'data', 'Citation.out'))
         plotter = DatcomPlotter(parser.get_common())
+        plotter.common_plots()
