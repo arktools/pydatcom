@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 import sys
 import os
 
-version = '0.1.3'
+version = '0.2.0'
 
 setup(name='PyDatcom',
       version=version,
@@ -39,6 +39,7 @@ setup(name='PyDatcom',
       package_data={'pydatcom': ['templates/*']},
       entry_points={
         'console_scripts': [
-            'pydatcom-export = pydatcom:DatcomExporter.command_line'
+            'pydatcom-export = pydatcom:DatcomExporter.command_line',
+            'pydatcom-plot = pydatcom:DatcomPlotter.command_line'
         ]},
       )
