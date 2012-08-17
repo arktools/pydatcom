@@ -17,4 +17,5 @@
 ## Example Usage
 ```bash
 pydatcom-export ../test/data/Citation.out -t modelica.mo -o Citation.mo
+pydatcom-plot ../test/data/Citation.out
 ```
