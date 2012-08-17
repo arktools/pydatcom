@@ -1,5 +1,9 @@
 # pydatcom
-* A python interface for DATCOM. Provides export/ parsing capabilities.
+* A python interface for DATCOM.
+* Capabilities
+ * Parse
+ * Export
+ * Plot
 
 ## Dependencies
 * ply (python lex/yacc)
