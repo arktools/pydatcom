@@ -6,12 +6,13 @@
  * Plot
 
 ## Dependencies
+
 * parsing
- *ply (python lex/yacc)
+ * ply (python lex/yacc)
 * exporting
- *jinja templates
+ * jinja templates
 * plotting
- *matplotlib
+ * matplotlib
 
 ## Example Usage
 ```bash
