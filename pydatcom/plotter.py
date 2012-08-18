@@ -185,6 +185,7 @@ class DatcomPlotter(object):
 
         parser = DatcomParser(args.datcom_file)
         plotter = DatcomPlotter(parser.get_common())
+        plotter.common_plots()
             
 if __name__ == "__main__":
     DatcomPlotter.command_line()

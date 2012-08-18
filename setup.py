@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 import sys
 import os
 
-version = '0.2.2'
+version = '0.2.4'
 
 setup(name='PyDatcom',
       version=version,
@@ -33,7 +33,6 @@ setup(name='PyDatcom',
       license='GPLv3',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
-      zip_safe=False,
       install_requires=['jinja2', 'ply', 'matplotlib'],
       package_dir={'pydatcom': 'pydatcom'},
       package_data={'pydatcom': ['templates/*']},
