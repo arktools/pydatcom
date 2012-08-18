@@ -15,9 +15,11 @@ class Parser(object):
     tokens = ()
     precedence = ()
 
-    def __init__(self, file_name=None, debug=0):
+    def __init__(self, file_name=None, debug=0,
+                keep_parse_tab=False):
         self.debug = debug
         self.file_name = file_name
+        self.keep_parse_tab = keep_parse_tab
         self.cases = []
         self.common_dicts = []
         try:
@@ -51,6 +53,11 @@ class Parser(object):
             with open(self.file_name) as f:
                 file_data = f.read()
             yacc.parse(file_data)
+
+        if not self.keep_parse_tab:
+            parse_tab_file = "parser_DatcomParser_parsetab.py"
+            if os.path.exists(parse_tab_file):
+                os.remove(parse_tab_file)
 
 
 class DatcomParser(Parser):

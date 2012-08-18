@@ -9,13 +9,14 @@ from matplotlib import cm
 from matplotlib.ticker import EngFormatter
 import numpy as np
 
+
 class DatcomPlotter(object):
 
     def __init__(self, parser_dict):
         self.d = parser_dict
         if not os.path.isdir('fig'):
             os.mkdir('fig')
-        self.figpath=os.path.abspath('fig')
+        self.figpath = os.path.abspath('fig')
 
     def common_plots(self):
         ## lift plots
@@ -87,7 +88,7 @@ class DatcomPlotter(object):
             title='{name}: YawRate effect on Roll Moment Coefficient',
             x_name='alpha', x_label='Alpha, deg',
             y_name='dCl_YawRate', y_label='dCl')
-       
+
         ## pitch moment
         self.plot2d(
             title='{name}: Basic Pitch Moment Coefficient',
@@ -129,24 +130,24 @@ class DatcomPlotter(object):
             x_name='alpha', x_label='Alpha, deg',
             y_name='dCn_YawRate', y_label='dCn')
 
-    def plot2d(self, title, 
+    def plot2d(self, title,
                x_name, x_label,
                y_name, y_label):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         y = self.d[y_name]
         x = self.d[x_name][:len(y)]
-        ax.plot(x,y)
+        ax.plot(x, y)
         ax.set_xlabel(x_label.format(**self.d))
         ax.set_ylabel(y_label.format(**self.d))
         ax.set_title(title.format(**self.d))
         ax.grid()
         plt.savefig(os.path.join(self.figpath,
             os.path.join(self.figpath,
-                title.format(**self.d)+'.pdf')))
+                title.format(**self.d) + '.pdf')))
         plt.close(fig)
 
-    def plot3d(self, title, 
+    def plot3d(self, title,
                x_name, x_label,
                y_name, y_label,
                z_name, z_label):
@@ -163,14 +164,14 @@ class DatcomPlotter(object):
         #print 'len Z2:', len(Z[0])
         #print 'len x:', len(x)
         #print 'len y:', len(y)
-        X, Y = np.meshgrid(x,y)
+        X, Y = np.meshgrid(x, y)
         surf = ax.plot_surface(X, Y, Z,
             cmap=cm.jet, rstride=1, cstride=1)
         fig.colorbar(surf, shrink=0.5, aspect=5)
         ax.grid()
         plt.savefig(os.path.join(self.figpath,
             os.path.join(self.figpath,
-                title.format(**self.d)+'.pdf')))
+                title.format(**self.d) + '.pdf')))
         plt.close(fig)
 
     @staticmethod
@@ -186,6 +187,6 @@ class DatcomPlotter(object):
         parser = DatcomParser(args.datcom_file)
         plotter = DatcomPlotter(parser.get_common())
         plotter.common_plots()
-            
+
 if __name__ == "__main__":
     DatcomPlotter.command_line()
